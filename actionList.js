@@ -1121,3 +1121,6 @@ Action.StartJourney = new Action("Start Journey", {
     }
 });
 
+const actionsWithGoldCost = Object.values(Action).filter(
+    action => action.goldCost !== undefined
+);
