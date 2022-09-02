@@ -133,7 +133,7 @@ function getZombieStrength() {
 }
 
 function getTeamStrength() {
-    return (getSkillLevel("Combat") + getSkillLevel("Restoration") * 4) * (resources.teamMembers / 2) * getAdvGuildRank().bonus * getSkillBonus("Leadership") * (1 + getBuffLevel("Feast") * .05);
+    return (getSkillLevel("Combat") + getSkillLevel("Restoration") * 4); //* (resources.teamMembers / 2) * getAdvGuildRank().bonus * getSkillBonus("Leadership") * (1 + getBuffLevel("Feast") * .05);
 }
 
 function getTeamCombat() {
