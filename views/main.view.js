@@ -29,7 +29,6 @@ function View() {
         this.updateTeamCombat();
         this.updateLoadoutNames();
         this.updateResources();
-        this.updateTrials();
         if (storyMax >= 12)
             setInterval(() => {
                 view.updateStories();
@@ -119,7 +118,6 @@ function View() {
         updateSkills: [],
         updateBuff: [],
         updateTrialInfo: [],
-        updateTrials: [],
         updateRegular: [],
         updateProgressAction: [],
         updateMultiPartSegments: [],
@@ -1089,32 +1087,6 @@ function View() {
             document.getElementById(`soulstonePrevious${index}_${i}`).textContent = level.lastStat;
             document.getElementById(`soulstoneCompleted${index}_${i}`).textContent = formatNumber(level.completed);
         }
-    };
-
-    this.updateTrials = function() {
-        for(let i = 0; i < trials.length; i++)
-        {
-            this.updateTrialInfo({trialNum: i, curFloor: 0});
-        }
-    };
-
-    this.updateTrialInfo = function(updateInfo) {
-        const curFloor = updateInfo.curFloor;
-        const trialNum = updateInfo.trialNum;
-        const trial = trials[trialNum];
-            document.getElementById(`trial${trialNum}HighestFloor`).textContent = trial.highestFloor + 1;
-            if (curFloor >= trial.length) {
-                document.getElementById(`trial${trialNum}CurFloor`).textContent = "";
-                document.getElementById(`trial${trialNum}CurFloorCompleted`).textContent = "";
-            }
-            else {
-                document.getElementById(`trial${trialNum}CurFloor`).textContent = "" + (curFloor + 1);
-                document.getElementById(`trial${trialNum}CurFloorCompleted`).textContent = trial[curFloor].completed;
-            }
-            if (curFloor > 0) {
-                document.getElementById(`trial${trialNum}LastFloor`).textContent = curFloor;
-                document.getElementById(`trial${trialNum}LastFloorCompleted`).textContent = trial[curFloor - 1].completed;
-            }
     };
 
     this.updateSoulstones = function() {

@@ -165,42 +165,6 @@ DungeonAction.prototype.getPartName = function() {
 //====================================================================================================
 //Zone 1 - Beginnersville
 //====================================================================================================
-Action.Map = new Action("Map", {
-    type: "normal",
-    expMult: 1,
-    townNum: 0,
-    storyReqs(storyNum) {
-        switch (storyNum) {
-            case 1:
-                return getExploreProgress() > 1;
-        }
-        return false;
-    },
-    stats: {
-        Cha: 0.8,
-        Luck: 0.1,
-        Soul: 0.1
-    },
-    manaCost() {
-        return 200;
-    },
-    canStart() {
-        return resources.gold >= 15;
-    },
-    visible() {
-        return getExploreProgress() > 0;
-    },
-    unlocked() {
-        return getExploreProgress() > 0;
-    },
-    goldCost() {
-        return 15;
-    },
-    finish() {
-        addResource("gold", -this.goldCost());
-        addResource("map", 1);
-    },
-});
 
 Action.Wander = new Action("Wander", {
     type: "progress",
