@@ -125,7 +125,7 @@ function getArmorLevel() {
 }
 
 function getSelfCombat() {
-    return (getSkillLevel("Combat") + getSkillLevel("Pyromancy") * 5) * getArmorLevel() * (1 + getBuffLevel("Feast") * .05);
+    return (getSkillLevel("Combat") + getSkillLevel("Pyromancy") * 5); //* getArmorLevel() * (1 + getBuffLevel("Feast") * .05);
 }
 
 function getZombieStrength() {
