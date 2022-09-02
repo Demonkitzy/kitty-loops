@@ -209,12 +209,12 @@ Action.Wander = new Action("Wander", {
 function adjustPots() {
     let town = towns[0];
     let basePots = town.getLevel("Wander") * 5;
-    town.totalPots = Math.floor(basePots + basePots * getSurveyBonus(town));
+    town.totalPots = Math.floor(basePots);
 }
 function adjustLocks() {
     let town = towns[0];
     let baseLocks = town.getLevel("Wander");
-    town.totalLocks = Math.floor(baseLocks * getSkillMod("Spatiomancy", 100, 300, .5) + baseLocks * getSurveyBonus(town));
+    town.totalLocks = Math.floor(baseLocks * getSkillMod("Spatiomancy", 100, 300, .5));
 }
 
 Action.SmashPots = new Action("Smash Pots", {
@@ -312,8 +312,6 @@ Action.BuyGlasses = new Action("Buy Glasses", {
         switch (storyNum) {
             case 1:
                 return storyReqs.glassesBought;
-            case 2:
-                return getExploreProgress() >= 100;
         }
         return false;
     },
@@ -347,31 +345,6 @@ Action.BuyGlasses = new Action("Buy Glasses", {
     }
 });
 
-Action.FoundGlasses = new Action("Found Glasses", {
-    type: "normal",
-    expMult: 0,
-    townNum: 0,
-    stats: {
-    },
-    affectedBy: ["SurveyZ1"],
-    allowed() {
-        return 1;
-    },
-    canStart() {
-        return false;
-    },
-    manaCost() {
-        return 0;
-    },
-    visible() {
-        return getExploreProgress() >= 100;
-    },
-    unlocked() {
-        return false;
-    },
-    finish() {
-    }
-});
 
 Action.BuyManaZ1 = new Action("Buy Mana Z1", {
     type: "normal",
@@ -450,7 +423,7 @@ Action.MeetPeople = new Action("Meet People", {
 function adjustSQuests() {
     let town = towns[0];
     let baseSQuests = town.getLevel("Met");
-    town.totalSQuests = Math.floor(baseSQuests * getSkillMod("Spatiomancy", 200, 400, .5) + baseSQuests * getSurveyBonus(town));
+    town.totalSQuests = Math.floor(baseSQuests * getSkillMod("Spatiomancy", 200, 400, .5));
 }
 
 Action.TrainStrength = new Action("Train Strength", {
@@ -590,7 +563,7 @@ Action.Investigate = new Action("Investigate", {
 function adjustLQuests() {
     let town = towns[0];
     let baseLQuests = town.getLevel("Secrets") / 2;
-    town.totalLQuests = Math.floor(baseLQuests * getSkillMod("Spatiomancy", 300, 500, .5) + baseLQuests * getSurveyBonus(town));
+    town.totalLQuests = Math.floor(baseLQuests * getSkillMod("Spatiomancy", 300, 500, .5));
 }
 
 Action.LongQuest = new Action("Long Quest", {

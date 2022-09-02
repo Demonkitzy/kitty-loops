@@ -96,7 +96,6 @@ function getSkillBonus(skill) {
     let change;
     if (skill === "Dark" || skill === "Chronomancy" || skill === "Mercantilism" || skill === "Divine" || skill === "Wunderkind" || skill === "Thievery" || skill === "Leadership") change = "increase";
     else if (skill === "Practical" || skill === "Spatiomancy" || skill === "Commune" || skill === "Gluttony") change = "decrease";
-    else if (skill === "Assassin") change = "custom";
     else console.log("Skill not found:" + skill);
 
     if(change == "increase") return Math.pow(1 + getSkillLevel(skill) / 60, 0.25);
@@ -120,10 +119,6 @@ function getRitualBonus(min, max, speed)
     else return 1 + Math.min(getBuffLevel("Ritual") - min, max-min) * speed / 100;
 }
 
-function getSurveyBonus(town)
-{
-    return town.getLevel("Survey") * .005;
-}
 
 function getArmorLevel() {
     return 1 + ((resources.armor + 3 * resources.enchantments) * getCraftGuildRank().bonus) / 5;

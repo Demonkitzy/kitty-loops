@@ -208,7 +208,6 @@ function Actions() {
         view.requestUpdate("updateMultiPartActions");
         view.requestUpdate("updateNextActions");
         view.requestUpdate("updateTime");
-        view.requestUpdate("updateActionTooltips");
     };
 
     this.adjustTicksNeeded = function() {
@@ -292,16 +291,6 @@ function getNumOnList(actionName) {
     let count = 0;
     for (const action of actions.next) {
         if (!action.disabled && action.name === actionName) {
-            count += action.loops;
-        }
-    }
-    return count;
-}
-
-function getOtherSurveysOnList(surveyName) {
-    let count = 0;
-    for (const action of actions.next) {
-        if (!action.disabled && action.name.startsWith("Survey") && action.name != surveyName) {
             count += action.loops;
         }
     }

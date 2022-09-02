@@ -40,7 +40,6 @@ function View() {
                 view.updateLockedHidden();
             }, 2000);
         adjustAll();
-        this.updateActionTooltips();
     };
 
     this.statLocs = [
@@ -134,7 +133,6 @@ function View() {
         updateSoulstones: [],
         updateResource: [],
         updateResources: [],
-        updateActionTooltips: [],
         updateLockedHidden: [],
         updateTravelMenu: [],
         updateTeamCombat: [],
@@ -271,8 +269,6 @@ function View() {
                 document.getElementById("skillBonusThievery").textContent = intToString(getSkillBonus("Thievery"), 4);
             } else if (skill === "Leadership") {
                 document.getElementById("skillBonusLeadership").textContent = intToString(getSkillBonus("Leadership"), 4);
-            } else if (skill === "Assassin") {
-                document.getElementById("skillBonusAssassin").textContent = intToString(getSkillBonus("Assassin"), 4);
             }
         }
         this.adjustTooltipPosition(container.querySelector("div.showthis"));
@@ -331,17 +327,6 @@ function View() {
     this.updateResources = function() {
         for (const resource in resources) this.updateResource(resource);
     };
-    this.updateActionTooltips = function() {
-        document.getElementById("goldInvested").textContent = intToStringRound(goldInvested);
-        document.getElementById("bankInterest").textContent = intToStringRound(goldInvested * .001);
-        document.getElementById("actionAllowedPockets").textContent = intToStringRound(towns[7].totalPockets);
-        document.getElementById("actionAllowedWarehouses").textContent = intToStringRound(towns[7].totalWarehouses);
-        document.getElementById("actionAllowedInsurance").textContent = intToStringRound(towns[7].totalInsurance);
-        document.getElementById("totalSurveyProgress").textContent = getExploreProgress();
-        Array.from(document.getElementsByClassName("surveySkill")).forEach(div => {
-            div.textContent = getExploreSkill();
-        });
-    }
     this.updateTeamCombat = function() {
         if (towns[2].unlocked) {
             document.getElementById("skillSCombatContainer").style.display = "inline-block";
@@ -444,7 +429,7 @@ function View() {
             } else {
                 color = (travelNum > 0 || travelNum == -5) ? `linear-gradient(${this.zoneTints[townNum]} 49%, ${this.zoneTints[townNum + travelNum]} 51%)` : this.zoneTints[townNum];
             }
-            const imageName = action.name.startsWith("Assassin") ? "assassin" : camelize(action.name);
+            const imageName = camelize(action.name);
             totalDivText +=
                 `<div
                     id='nextActionContainer${i}'
@@ -484,7 +469,7 @@ function View() {
             const action = actions.current[i];
             const actionLoops = action.loops > 99999 ? toSuffix(action.loops) : formatNumber(action.loops);
             const actionLoopsDone = (action.loops - action.loopsLeft) > 99999 ? toSuffix(action.loops - action.loopsLeft) : formatNumber(action.loops - action.loopsLeft);
-            const imageName = action.name.startsWith("Assassin") ? "assassin" : camelize(action.name);
+            const imageName = camelize(action.name);
             totalDivText +=
                 `<div class='curActionContainer small' onmouseover='view.mouseoverAction(${i}, true)' onmouseleave='view.mouseoverAction(${i}, false)'>
                     <div class='curActionBar' id='action${i}Bar'></div>
@@ -864,7 +849,7 @@ function View() {
         }
         const isTravel = getTravelNum(action.name) > 0;
         const divClass = isTravel ? "travelContainer showthat" : "actionContainer showthat";
-        const imageName = action.name.startsWith("Assassin") ? "assassin" : camelize(action.name);
+        const imageName =  camelize(action.name);
         const totalDivText =
             `<div
                 id='container${action.varName}'

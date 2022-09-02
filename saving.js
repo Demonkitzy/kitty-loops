@@ -19,16 +19,6 @@ function cheatBonus()
     totalOfflineMs = 1000000000000000;
 }
 
-function cheatSurvey()
-{
-    for(i= 0; i<9; i++)
-    {
-        varName = "SurveyZ" + i
-        towns[i][`exp${varName}`] = 505000;
-        view.updateProgressAction({name: varName, town: towns[i]});
-    }
-}
-
 function cheatProgress()
 {
     for (const action of totalActionList)
@@ -139,7 +129,7 @@ let curLoadout = 0;
 let loadouts;
 let loadoutnames;
 //let loadoutnames = ["1", "2", "3", "4", "5"];
-const skillList = ["Combat", "Magic", "Practical", "Alchemy", "Crafting", "Dark", "Chronomancy", "Pyromancy", "Restoration", "Spatiomancy", "Mercantilism", "Divine", "Commune", "Wunderkind", "Gluttony", "Thievery", "Leadership", "Assassin"];
+const skillList = ["Combat", "Magic", "Practical", "Alchemy", "Crafting", "Dark", "Chronomancy", "Pyromancy", "Restoration", "Spatiomancy", "Mercantilism", "Divine", "Commune", "Wunderkind", "Gluttony", "Thievery", "Leadership"];
 const skills = {};
 const buffList = ["Ritual", "Imbuement", "Imbuement2", "Feast", "Aspirant", "Heroism", "Imbuement3"];
 const dungeonFloors = [6, 9, 20];

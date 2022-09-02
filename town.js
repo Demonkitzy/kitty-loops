@@ -14,7 +14,6 @@ function Town(index) {
     };
 
     this.getLevel = function(varName) {
-        if (varName === "Survey") varName = varName + "Z" + this.index;
         return Math.floor((Math.sqrt(8 * this[`exp${varName}`] / 100 + 1) - 1) / 2);
     };
 
