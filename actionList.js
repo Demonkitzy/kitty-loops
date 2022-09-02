@@ -78,12 +78,14 @@ const townNames = ["Beginnersville", "Forest Path", "Merchanton", "Mt. Olympus",
 
 // actions are all sorted below by town in order
 
-function Action(name, extras) {
-    this.name = name;
-    // many actions have to override this (in extras) for save compatibility, because the
-    // varName is often used in parts of the game state
-    this.varName = withoutSpaces(name);
-    Object.assign(this, extras);
+class Action{
+    constructor(name, extras) {
+        this.name = name;
+        // many actions have to override this (in extras) for save compatibility, because the
+        // varName is often used in parts of the game state
+        this.varName = withoutSpaces(name);
+        Object.assign(this, extras);
+    }
 }
 
 /* eslint-disable no-invalid-this */
@@ -118,12 +120,16 @@ Action.prototype.infoText = function() {
 
 // same as Action, but contains shared code to load segment names for multipart actions.
 // (constructor takes number of segments as a second argument)
-function MultipartAction(name, extras) {
-    Action.call(this, name, extras);
-    this.segments = (extras.varName === "Fight") ? 3 : extras.loopStats.length;
+class MultipartAction extends Action {
+    constructor(name, extras) {
+        super(name, extras)
+        this.segments = (extras.varName === "Fight") ? 3 : extras.loopStats.length;
+    };
+
+    getSegmentName(segment) {
+        return this.segmentNames[segment % this.segmentNames.length];
+    };
 }
-MultipartAction.prototype = Object.create(Action.prototype);
-MultipartAction.prototype.constructor = MultipartAction;
 // lazily calculate segment names when explicitly requested (to give chance for localization
 // code to be loaded first)
 defineLazyGetter(MultipartAction.prototype, "segmentNames", function() {
@@ -131,36 +137,35 @@ defineLazyGetter(MultipartAction.prototype, "segmentNames", function() {
         _txtsObj(`actions>${getXMLName(this.name)}>segment_names>name`)
     ).map(elt => elt.textContent);
 });
-MultipartAction.prototype.getSegmentName = function(segment) {
-    return this.segmentNames[segment % this.segmentNames.length];
-};
 /* eslint-enable no-invalid-this */
 
 // same as MultipartAction, but includes shared code to generate dungeon completion tooltip
 // as well as specifying 7 segments (constructor takes dungeon ID number as a second
 // argument)
-function DungeonAction(name, dungeonNum, extras) {
-    MultipartAction.call(this, name, extras);
-    this.dungeonNum = dungeonNum;
-}
-DungeonAction.prototype = Object.create(MultipartAction.prototype);
-DungeonAction.prototype.constructor = DungeonAction;
-DungeonAction.prototype.completedTooltip = function() {
-    let ssDivContainer = "";
-    if (this.dungeonNum < 3) {
-        for (let i = 0; i < dungeons[this.dungeonNum].length; i++) {
-            ssDivContainer += `Floor ${i + 1} |
-                                <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>chance_label`)} </div> <div id='soulstoneChance${this.dungeonNum}_${i}'></div>% -
-                                <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>last_stat_label`)} </div> <div id='soulstonePrevious${this.dungeonNum}_${i}'>NA</div> -
-                                <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>label_done`)}</div> <div id='soulstoneCompleted${this.dungeonNum}_${i}'></div><br>`;
+class DungeonAction extends MultipartAction{
+    constructor(name, dungeonNum, extras) {
+        super(name, extras);
+        this.dungeonNum = dungeonNum;
+    };
+
+    completedTooltip() {
+        let ssDivContainer = "";
+        if (this.dungeonNum < 3) {
+            for (let i = 0; i < dungeons[this.dungeonNum].length; i++) {
+                ssDivContainer += `Floor ${i + 1} |
+                                    <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>chance_label`)} </div> <div id='soulstoneChance${this.dungeonNum}_${i}'></div>% -
+                                    <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>last_stat_label`)} </div> <div id='soulstonePrevious${this.dungeonNum}_${i}'>NA</div> -
+                                    <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>label_done`)}</div> <div id='soulstoneCompleted${this.dungeonNum}_${i}'></div><br>`;
+            }
         }
-    }
-    return _txt(`actions>${getXMLName(this.name)}>completed_tooltip`) + ssDivContainer;
-};
-DungeonAction.prototype.getPartName = function() {
-    const floor = Math.floor((towns[this.townNum][`${this.varName}LoopCounter`] + 0.0001) / this.segments + 1);
-    return `${_txt(`actions>${getXMLName(this.name)}>label_part`)} ${floor <= dungeons[this.dungeonNum].length ? numberToWords(floor) : _txt(`actions>${getXMLName(this.name)}>label_complete`)}`;
-};
+        return _txt(`actions>${getXMLName(this.name)}>completed_tooltip`) + ssDivContainer;
+    };
+
+    getPartName() {
+        const floor = Math.floor((towns[this.townNum][`${this.varName}LoopCounter`] + 0.0001) / this.segments + 1);
+        return `${_txt(`actions>${getXMLName(this.name)}>label_part`)} ${floor <= dungeons[this.dungeonNum].length ? numberToWords(floor) : _txt(`actions>${getXMLName(this.name)}>label_complete`)}`;
+    };
+}
 
 //====================================================================================================
 //Zone 1 - Beginnersville
@@ -332,7 +337,7 @@ Action.BuyGlasses = new Action("Buy Glasses", {
         return 50;
     },
     visible() {
-        return towns[0].getLevel("Wander") >= 3 && getExploreProgress() < 100;
+        return towns[0].getLevel("Wander") >= 3;
     },
     unlocked() {
         return towns[0].getLevel("Wander") >= 20;

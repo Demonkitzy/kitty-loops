@@ -1,6 +1,5 @@
 "use strict";
 
-// eslint-disable-next-line prefer-const
 let gameSpeed = 1;
 const baseManaPerSecond = 50;
 
@@ -195,7 +194,6 @@ function restart() {
     view.requestUpdate("updateSkills");
     actions.restart();
     view.requestUpdate("updateCurrentActionsDivs");
-    view.requestUpdate("updateTrials", null);
 }
 
 function manualRestart() {
@@ -257,7 +255,6 @@ function resetResource(resource) {
 
 function resetResources() {
     resources = copyObject(resourcesTemplate);
-    if(getExploreProgress() >= 100) addResource("glasses", true);
     view.requestUpdate("updateResources", null);
 }
 
@@ -356,7 +353,6 @@ function unlockTown(townNum) {
         townsUnlocked.sort();
         // refresh current
         view.showTown(townNum);
-        view.requestUpdate("updateTravelMenu",null);
     }
     let cNum = challengeSave.challengeMode;
     if (cNum !== 0) {
@@ -371,7 +367,7 @@ function adjustAll() {
     adjustLocks();
     adjustSQuests();
     adjustLQuests();
-    adjustWildMana();
+    /*adjustWildMana();
     adjustHerbs();
     adjustHunt();
     adjustSuckers();
@@ -383,10 +379,8 @@ function adjustAll() {
     adjustPylons();
     adjustPockets();
     adjustWarehouses();
-    adjustInsurance();
-    adjustAllRocks();
-    adjustTrainingExpMult();
-    view.requestUpdate("adjustManaCost", "Continue On");
+    adjustInsurance();*/
+    //view.requestUpdate("adjustManaCost", "Continue On");
 }
 
 function capAmount(index, townNum) {
@@ -474,6 +468,7 @@ function collapse(index) {
 }
 
 function showNotification(name) {
+    console.log(document.getElementById(`${name}Notification`))
     document.getElementById(`${name}Notification`).style.display = "block";
 }
 

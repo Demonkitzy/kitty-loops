@@ -2,8 +2,58 @@
 
 let screenSize;
 
-function View() {
-    this.initalize = function() {
+class View {
+    constructor() {
+        this.statLocs = [
+            { x: 166, y: 45 },
+            { x: 267, y: 80 },
+            { x: 321, y: 167 },
+            { x: 303, y: 279 },
+            { x: 224, y: 343 },
+            { x: 106, y: 343 },
+            { x: 33, y: 278 },
+            { x: 10, y: 167 },
+            { x: 61, y: 80 }
+        ];
+
+        // requests are properties, where the key is the function name,
+        // and the array items in the value are the target of the function
+        this.requests = {
+            updateStat: [],
+            updateSkill: [],
+            updateSkills: [],
+            updateBuff: [],
+            updateRegular: [],
+            updateProgressAction: [],
+            updateMultiPartSegments: [],
+            updateMultiPart: [],
+            updateMultiPartActions: [],
+            updateNextActions: [],
+            updateTime: [],
+            updateOffline: [],
+            updateTotals: [],
+            updateCurrentActionBar: [],
+            updateCurrentActionsDivs: [],
+            updateTotalTicks: [],
+            updateCurrentActionLoops: [],
+            updateSoulstones: [],
+            updateResource: [],
+            updateResources: [],
+            updateLockedHidden: [],
+            updateTravelMenu: [],
+            updateTeamCombat: [],
+            adjustManaCost: [],
+            adjustGoldCost: [],
+            adjustGoldCosts: [],
+            adjustExpGain: [],
+            removeAllHighlights: [],
+            highlightIncompleteActions: []
+        };
+        
+        this.updateStatGraphNeeded = false;
+    }
+
+    initalize() {
         this.createTravelMenu();
         this.createStats();
         this.updateStats();
@@ -42,18 +92,7 @@ function View() {
         adjustAll();
     };
 
-    this.statLocs = [
-        { x: 166, y: 45 },
-        { x: 267, y: 80 },
-        { x: 321, y: 167 },
-        { x: 303, y: 279 },
-        { x: 224, y: 343 },
-        { x: 106, y: 343 },
-        { x: 33, y: 278 },
-        { x: 10, y: 167 },
-        { x: 61, y: 80 }
-    ];
-    this.createStats = function() {
+    createStats() {
         statGraph.init();
         const statContainer = document.getElementById("statContainer");
         while (statContainer.firstChild) {
@@ -109,47 +148,12 @@ function View() {
             });
     };
 
-    // requests are properties, where the key is the function name,
-    // and the array items in the value are the target of the function
-    this.requests = {
-        updateStat: [],
-        updateSkill: [],
-        updateSkills: [],
-        updateBuff: [],
-        updateTrialInfo: [],
-        updateRegular: [],
-        updateProgressAction: [],
-        updateMultiPartSegments: [],
-        updateMultiPart: [],
-        updateMultiPartActions: [],
-        updateNextActions: [],
-        updateTime: [],
-        updateOffline: [],
-        updateTotals: [],
-        updateCurrentActionBar: [],
-        updateCurrentActionsDivs: [],
-        updateTotalTicks: [],
-        updateCurrentActionLoops: [],
-        updateSoulstones: [],
-        updateResource: [],
-        updateResources: [],
-        updateLockedHidden: [],
-        updateTravelMenu: [],
-        updateTeamCombat: [],
-        adjustManaCost: [],
-        adjustGoldCost: [],
-        adjustGoldCosts: [],
-        adjustExpGain: [],
-        removeAllHighlights: [],
-        highlightIncompleteActions: []
-    };
-
     // requesting an update will call that update on the next view.update tick (based off player set UPS)
-    this.requestUpdate = function(category, target) {
+    requestUpdate(category, target) {
         if (!this.requests[category].includes(target)) this.requests[category].push(target);
     };
 
-    this.handleUpdateRequests = function() {
+    handleUpdateRequests() {
         for (const category in this.requests) {
             for (const target of this.requests[category]) {
                 this[category](target);
@@ -158,7 +162,7 @@ function View() {
         }
     };
 
-    this.update = function() {
+    update() {
 
         this.handleUpdateRequests();
 
@@ -168,7 +172,7 @@ function View() {
     };
 
 
-    this.adjustTooltipPosition = function(tooltipDiv) {
+    adjustTooltipPosition(tooltipDiv) {
         let parent = tooltipDiv.parentNode;
         let y = parent.getBoundingClientRect().y;
         let windowHeight = window.innerHeight;
@@ -181,14 +185,12 @@ function View() {
         }
     }
 
-    this.showStat = function(stat) {
+    showStat(stat) {
         statShowing = stat;
         if (stat !== undefined) this.updateStat(stat);
     };
 
-    this.updateStatGraphNeeded = false;
-
-    this.updateStat = function(stat) {
+    updateStat(stat) {
         const level = getLevel(stat);
         const talent = getTalent(stat);
         const levelPrc = `${getPrcToNextLevel(stat)}%`;
@@ -215,18 +217,18 @@ function View() {
         }
     };
 
-    this.updateStats = function() {
+    updateStats() {
         for (const stat of statList) {
             this.updateStat(stat);
         }
     };
 
-    this.showSkill = function(skill) {
+    showSkill(skill) {
         skillShowing = skill;
         if (skill !== undefined) this.updateSkill(skill);
     };
 
-    this.updateSkill = function(skill) {
+    updateSkill(skill) {
         if (skills[skill].exp === 0) {
             document.getElementById(`skill${skill}Container`).style.display = "none";
             return;
@@ -274,18 +276,18 @@ function View() {
         this.adjustTooltipPosition(container.querySelector("div.showthis"));
     };
 
-    this.updateSkills = function() {
+    updateSkills() {
         for (const skill of skillList) {
             this.updateSkill(skill);
         }
     };
 
-    this.showBuff = function(buff) {
+    showBuff(buff) {
         buffShowing = buff;
         if (buff !== undefined) this.updateBuff(buff);
     };
 
-    this.updateBuff = function(buff) {
+    updateBuff(buff) {
         if (buffs[buff].amt === 0) {
             document.getElementById(`buff${buff}Container`).style.display = "none";
             return;
@@ -299,24 +301,24 @@ function View() {
         this.adjustTooltipPosition(container.querySelector("div.showthis"));
     };
 
-    this.updateBuffs = function() {
+    updateBuffs() {
         for (const buff of buffList) {
             this.updateBuff(buff);
         }
     };
 
-    this.updateTime = function() {
+    updateTime() {
         document.getElementById("timeBar").style.width = `${100 - timer / timeNeeded * 100}%`;
         document.getElementById("timer").textContent = `${intToString((timeNeeded - timer), 1)} | ${formatTime((timeNeeded - timer) / 50 / getActualGameSpeed())}`;
     };
-    this.updateOffline = function() {
+    updateOffline() {
         document.getElementById("bonusSeconds").textContent = formatTime(totalOfflineMs / 1000);
     }
-    this.updateTotalTicks = function() {
+    updateTotalTicks() {
         document.getElementById("totalTicks").textContent = `${formatNumber(actions.completedTicks)} | ${formatTime(timeCounter)}`;
         document.getElementById("effectiveTime").textContent = `${formatTime(effectiveTime)}`;
     };
-    this.updateResource = function(resource) {
+    updateResource(resource) {
         if (resource !== "gold") document.getElementById(`${resource}Div`).style.display = resources[resource] ? "inline-block" : "none";
 
         if (resource === "supplies") document.getElementById("suppliesCost").textContent = towns[0].suppliesCost;
@@ -324,10 +326,10 @@ function View() {
 
         if (Number.isFinite(resources[resource])) document.getElementById(resource).textContent = resources[resource];
     };
-    this.updateResources = function() {
+    updateResources() {
         for (const resource in resources) this.updateResource(resource);
     };
-    this.updateTeamCombat = function() {
+    updateTeamCombat() {
         if (towns[2].unlocked) {
             document.getElementById("skillSCombatContainer").style.display = "inline-block";
             document.getElementById("skillTCombatContainer").style.display = "inline-block";
@@ -338,7 +340,7 @@ function View() {
             document.getElementById("skillTCombatContainer").style.display = "none";
         }
     };
-    this.zoneTints = [
+    zoneTints = [
         "rgba(255, 152, 0, 0.2)", //Beginnersville
         "rgba(76, 175, 80, 0.2)", //Forest Path
         "rgba(255, 235, 59, 0.2)", //Merchanton
@@ -350,7 +352,7 @@ function View() {
         "rgba(103, 58, 183, 0.4)", //Valley of Olympus
         //"rgba(103, 58, 183, 0.2)"
     ];
-    this.updateNextActions = function() {
+    updateNextActions() {
         let count = 0;
         while (nextActionsDiv.firstChild) {
             if (document.getElementById(`capButton${count}`)) {
@@ -461,7 +463,7 @@ function View() {
         nextActionsDiv.innerHTML = totalDivText;
     };
 
-    this.updateCurrentActionsDivs = function() {
+    updateCurrentActionsDivs() {
         let totalDivText = "";
 
         // definite leak - need to remove listeners and image
@@ -507,7 +509,7 @@ function View() {
         this.mouseoverAction(0, false);
     };
 
-    this.updateCurrentActionBar = function(index) {
+    updateCurrentActionBar(index) {
         const div = document.getElementById(`action${index}Bar`);
         if (!div) {
             return;
@@ -561,7 +563,7 @@ function View() {
         }
     };
 
-    this.mouseoverAction = function(index, isShowing) {
+    mouseoverAction(index, isShowing) {
         if (isShowing) curActionShowing = index;
         else curActionShowing = undefined;
         const div = document.getElementById(`action${index}Selected`);
@@ -574,7 +576,7 @@ function View() {
         view.updateCurrentActionBar(index);
     };
 
-    this.updateCurrentActionLoops = function(index) {
+    updateCurrentActionLoops(index) {
         const action = actions.current[index];
         if (action !== undefined) {
             document.getElementById(`action${index}LoopsDone`).textContent = (action.loops - action.loopsLeft) > 99999
@@ -583,7 +585,7 @@ function View() {
         }
     };
 
-    this.updateProgressAction = function(updateInfo) {
+    updateProgressAction(updateInfo) {
         const varName = updateInfo.name;
         const town = updateInfo.town;
         const level = town.getLevel(varName);
@@ -594,7 +596,7 @@ function View() {
         document.getElementById(`bar${varName}`).style.width = `${level}%`;
     };
 
-    this.updateProgressActions = function() {
+    updateProgressActions() {
         for (const town of towns) {
             for (let i = 0; i < town.progressVars.length; i++) {
                 const varName = town.progressVars[i];
@@ -603,7 +605,7 @@ function View() {
         }
     };
 
-    this.updateLockedHidden = function() {
+    updateLockedHidden() {
         for (const action of totalActionList) {
             const actionDiv = document.getElementById(`container${action.varName}`);
             const infoDiv = document.getElementById(`infoContainer${action.varName}`);
@@ -652,7 +654,7 @@ function View() {
         }
     };
 
-    this.updateStories = function(init) {
+    updateStories(init) {
         // ~1.56ms cost per run. run once every 2000ms on an interval
         for (const action of totalActionList) {
             if (action.storyReqs !== undefined) {
@@ -696,7 +698,7 @@ function View() {
         }
     };
 
-    this.showTown = function(townNum) {
+    showTown(townNum) {
         if (!towns[townNum].unlocked()) return;
 
         if (townNum === 0) {
@@ -724,7 +726,7 @@ function View() {
         townShowing = townNum;
     };
 
-    this.showActions = function(stories) {
+    showActions(stories) {
         for (let i = 0; i < actionOptionsTown.length; i++) {
             actionOptionsTown[i].style.display = "none";
             actionStoriesTown[i].style.display = "none";
@@ -744,7 +746,7 @@ function View() {
         actionStoriesShowing = stories;
     };
 
-    this.updateRegular = function(updateInfo) {
+    updateRegular(updateInfo) {
         const varName = updateInfo.name;
         const index = updateInfo.index;
         const town = towns[index];
@@ -755,7 +757,7 @@ function View() {
         document.getElementById(`good${varName}`).textContent = town[`good${varName}`];
     };
 
-    this.updateAddAmount = function(num) {
+    updateAddAmount(num) {
         for (let i = 0; i < 6; i++) {
             const elem = document.getElementById(`amount${num}`);
             if (elem) {
@@ -765,7 +767,7 @@ function View() {
         if (num > 0) removeClassFromDiv(document.getElementById(`amount${num}`), "unused");
     };
 
-    this.updateLoadout = function(num) {
+    updateLoadout(num) {
         for (let i = 0; i < 16; i++) {
             const elem = document.getElementById(`load${i}`);
             if (elem) {
@@ -778,14 +780,14 @@ function View() {
         }
     };
 
-    this.updateLoadoutNames = function() {
+    updateLoadoutNames() {
         for (let i = 0; i < loadoutnames.length; i++) {
             document.getElementById(`load${i + 1}`).textContent = loadoutnames[i];
         }
         document.getElementById("renameLoadout").value = loadoutnames[curLoadout - 1];
     };
 
-    this.createTownActions = function() {
+    createTownActions() {
         if (actionOptionsTown[0].firstChild) return;
         for (const prop in Action) {
             const action = Action[prop];
@@ -797,7 +799,7 @@ function View() {
         }
     };
 
-    this.createActionProgress = function(action) {
+    createActionProgress(action) {
         const totalDivText =
         `<div class='townStatContainer showthat'>
             <div class='bold townLabel'>${action.labelDone} </div> <div id='prc${action.varName}'>5</div>%
@@ -816,7 +818,7 @@ function View() {
         townInfos[action.townNum].appendChild(progressDiv);
     };
 
-    this.createTownAction = function(action) {
+    createTownAction(action) {
         let actionStats = "";
         let actionSkills = "";
         const statKeyNames = Object.keys(action.stats);
@@ -919,45 +921,46 @@ function View() {
         }
     };
 
-    this.updateAction = function(action) {
+    updateAction(action) {
         if (action === undefined) return
         let container = document.getElementById(`container${action}`);
         this.adjustTooltipPosition(container.querySelector("div.showthis"));
     }
 
-    this.adjustManaCost = function(actionName) {
+    adjustManaCost(actionName) {
+        console.log(actionName)
         const action = translateClassNames(actionName);
         document.getElementById(`manaCost${action.varName}`).textContent = formatNumber(action.manaCost());
     };
 
-    this.adjustExpMult = function(actionName) {
+    adjustExpMult(actionName) {
         const action = translateClassNames(actionName);
         document.getElementById(`expMult${action.varName}`).textContent = formatNumber(action.expMult * 100);
     };
 
-    this.adjustGoldCost = function(updateInfo) {
+    adjustGoldCost(updateInfo) {
         const varName = updateInfo.varName;
         const amount = updateInfo.cost;
         document.getElementById(`goldCost${varName}`).textContent = formatNumber(amount);
     };
-    this.adjustGoldCosts = function() {
+    adjustGoldCosts() {
         for (const action of actionsWithGoldCost) {
             this.adjustGoldCost({varName: action.varName, cost: action.goldCost()});
         }
     };
-    this.adjustExpGain = function(action) {
+    adjustExpGain(action) {
         for (const skill in action.skills) {
             if (Number.isInteger(action.skills[skill])) document.getElementById(`expGain${action.varName}${skill}`).textContent = ` ${action.skills[skill].toFixed(0)}`;
             else document.getElementById(`expGain${action.varName}${skill}`).textContent = ` ${action.skills[skill]().toFixed(0)}`;
         }
     };
-    this.adjustExpGains = function() {
+    adjustExpGains() {
         for (const action of totalActionList) {
             if (action.skills) this.adjustExpGain(action);
         }
     };
 
-    this.createTownInfo = function(action) {
+    createTownInfo(action) {
         const totalInfoText =
             `<div class='townInfoContainer showthat'>
                 <div class='bold townLabel'>${action.labelDone}</div>
@@ -976,7 +979,7 @@ function View() {
         townInfos[action.townNum].appendChild(infoDiv);
     };
 
-    this.createMultiPartPBar = function(action) {
+    createMultiPartPBar(action) {
         let pbars = "";
         const width = `style='width:calc(${91 / action.segments}% - 4px)'`;
         const varName = action.varName;
@@ -1015,7 +1018,7 @@ function View() {
         townInfos[action.townNum].appendChild(progressDiv);
     };
 
-    this.updateMultiPartActions = function() {
+    updateMultiPartActions() {
         for (const action of totalActionList) {
             if (action.type === "multipart") {
                 this.updateMultiPart(action);
@@ -1024,7 +1027,7 @@ function View() {
         }
     };
     
-    this.updateMultiPartSegments = function(action) {
+    updateMultiPartSegments(action) {
         let segment = 0;
         let curProgress = towns[action.townNum][action.varName];
         // update previous segments
@@ -1059,12 +1062,12 @@ function View() {
         }
     };
 
-    this.showDungeon = function(index) {
+    showDungeon(index) {
         dungeonShowing = index;
         if (index !== undefined) this.updateSoulstoneChance(index);
     };
 
-    this.updateSoulstoneChance = function(index) {
+    updateSoulstoneChance(index) {
         const dungeon = dungeons[index];
         for (let i = 0; i < dungeon.length; i++) {
             const level = dungeon[i];
@@ -1074,7 +1077,7 @@ function View() {
         }
     };
 
-    this.updateSoulstones = function() {
+    updateSoulstones() {
         for (const stat of statList) {
             if (stats[stat].soulstone) {
                 document.getElementById(`ss${stat}Container`).style.display = "inline-block";
@@ -1088,7 +1091,7 @@ function View() {
         }
     };
 
-    this.updateMultiPart = function(action) {
+    updateMultiPart(action) {
         const town = towns[action.townNum];
         document.getElementById(`multiPartName${action.varName}`).textContent = action.getPartName();
         document.getElementById(`completed${action.varName}`).textContent = ` ${formatNumber(town[`total${action.varName}`])}`;
@@ -1104,7 +1107,7 @@ function View() {
         }
     };
 
-    this.updateTrainingLimits = function() {
+    updateTrainingLimits() {
         for (let i = 0; i < statList.length; i++) {
             const trainingDiv = document.getElementById(`trainingLimit${statList[i]}`);
             if (trainingDiv) {
@@ -1115,7 +1118,7 @@ function View() {
     };
 
     // when you mouseover Story
-    this.updateStory = function(num) {
+    updateStory(num) {
         document.getElementById("newStory").style.display = "none";
         if (num <= 0) {
             num = 0;
@@ -1142,7 +1145,7 @@ function View() {
         document.getElementById(`story${num}`).style.display = "inline-block";
     };
 
-    this.changeStatView = function() {
+    changeStatView() {
         const statContainer = document.getElementById("statContainer");
         if (document.getElementById("regularStats").checked) {
             document.getElementById("radarChart").style.display = "none";
@@ -1166,13 +1169,13 @@ function View() {
         }
     };
 
-    this.changeTheme = function(init) {
+    changeTheme(init) {
         if (init) document.getElementById("themeInput").value = options.theme;
         options.theme = document.getElementById("themeInput").value;
         document.getElementById("theBody").className = `t-${options.theme}`;
     };
 
-    this.createTravelMenu = function() {
+    createTravelMenu() {
         let travelMenu = $("#TownSelect");
         travelMenu.empty()
         townNames.forEach((town, index) => {
@@ -1184,14 +1187,14 @@ function View() {
         this.updateTravelMenu()
     }
 
-    this.updateTravelMenu = function() {
+    updateTravelMenu() {
         let travelOptions = $("#TownSelect").children();
         for (let i=0;i<travelOptions.length;i++) {
             travelOptions[i].hidden=(!townsUnlocked.includes(i));
         }
     }
 
-    this.adjustDarkRitualText = function() {
+    adjustDarkRitualText() {
         let DRdesc = document.getElementById("DRText");
         DRdesc.innerHTML = `Actions are:<br>`;
         townsUnlocked.forEach(townNum => {
@@ -1200,7 +1203,7 @@ function View() {
         if(getBuffLevel("Ritual") > 200) DRdesc.innerHTML += DarkRitualDescription[9];
     }
 
-    this.highlightIncompleteActions = function() {
+    highlightIncompleteActions() {
         let actionDivs = Array.from(document.getElementsByClassName("actionContainer"));
         actionDivs.forEach(div => {
             let actionName = div.id.replace("container","");
@@ -1209,14 +1212,14 @@ function View() {
         });
     }
 
-    this.removeAllHighlights = function() {
+    removeAllHighlights() {
         let actionDivs = Array.from(document.getElementsByClassName("actionHighlight"));
         actionDivs.forEach(div => {
             div.classList.remove("actionHighlight");
         });
     }
 
-    this.updateTotals = function() {
+    updateTotals() {
         document.getElementById('totalPlaytime').textContent = `${formatTime(totals.time)}`;
         document.getElementById('totalEffectiveTime').textContent = `${formatTime(totals.effectiveTime)}`;
         document.getElementById('totalLoops').textContent = `${formatNumber(totals.loops)}`;

@@ -29,7 +29,6 @@ function cheatProgress()
             view.updateProgressAction({name: action.varName, town: towns[action.townNum]});
         }
     }
-    stonesUsed = {1:250, 3:250, 5:250, 6:250};
 }
 
 function cheatTalent(stat, targetTalentLevel)
@@ -66,60 +65,50 @@ const challengeSaveName = "idleLoopsChallenge";
 let saveName = defaultSaveName;
 
 // this is to hide the cheat button if you aren't supposed to cheat
-if (window.location.href.includes("http://127.0.0.2:8080")) document.getElementById("cheat").style.display = "inline-block";
+if (window.location.href.includes("http://127.0.0.1:5500")) document.getElementById("cheat").style.display = "inline-block";
 
 const timeNeededInitial = 5 * 50;
-// eslint-disable-next-line prefer-const
 let timer = timeNeededInitial;
-// eslint-disable-next-line prefer-const
 let timeNeeded = timeNeededInitial;
-// eslint-disable-next-line prefer-const
 let stop = false;
 const view = new View();
 const actions = new Actions();
 const towns = [];
-// eslint-disable-next-line prefer-const
 let curTown = 0;
 
 const statList = ["Dex", "Str", "Con", "Spd", "Per", "Cha", "Int", "Luck", "Soul"];
 const stats = {};
 let totalTalent = 0;
-// eslint-disable-next-line prefer-const
 let shouldRestart = true;
-
-// eslint-disable-next-line prefer-const
 let resources = {
     gold: 0,
     reputation: 0,
-    herbs: 0,
-    hide: 0,
-    potions: 0,
-    teamMembers: 0,
-    armor: 0,
-    blood: 0,
-    artifacts: 0,
-    favors: 0,
-    enchantments: 0,
-    houses: 0,
-    pylons: 0,
-    zombie: 0,
-    map: 0,
-    completedMap: 0,
-    heart: 0,
-    power: 0,
+    //herbs: 0,
+    //hide: 0,
+    //potions: 0,
+    //teamMembers: 0,
+    //armor: 0,
+    //blood: 0,
+    //artifacts: 0,
+    //favors: 0,
+    //enchantments: 0,
+    //houses: 0,
+    //pylons: 0,
+    //zombie: 0,
+    //power: 0,
     glasses: false,
     supplies: false,
-    pickaxe: false,
-    loopingPotion: false,
-    citizenship: false,
-    pegasus: false,
-    key: false,
-    stone: false
+    //pickaxe: false,
+    //loopingPotion: false,
+    //citizenship: false,
+    //pegasus: false,
+    //key: false,
+    //stone: false
 };
 let hearts = [];
 const resourcesTemplate = copyObject(resources);
 //Temp variables
-// eslint-disable-next-line prefer-const
+
 let guild = "";
 let escapeStarted = false;
 let portalUsed = false;
@@ -154,10 +143,9 @@ const buffCaps = {
 };
 const buffs = {};
 let goldInvested = 0;
-let stonesUsed;
-// eslint-disable-next-line prefer-const
+
 let townShowing = 0;
-// eslint-disable-next-line prefer-const
+
 let actionStoriesShowing = false;
 let townsUnlocked = [];
 let completedActions = [];
@@ -243,7 +231,7 @@ const storyReqs = {
 
 const curDate = new Date();
 let totalOfflineMs = 0;
-// eslint-disable-next-line prefer-const
+
 let bonusSpeed = 1;
 const offlineRatio = 1;
 let totals = {
@@ -260,17 +248,17 @@ let challengeSave = {
 
 let totalMerchantMana = 7500;
 
-// eslint-disable-next-line prefer-const
+
 let curAdvGuildSegment = 0;
-// eslint-disable-next-line prefer-const
+
 let curCraftGuildSegment = 0;
-// eslint-disable-next-line prefer-const
+
 let curWizCollegeSegment = 0;
-// eslint-disable-next-line prefer-const
+
 let curFightFrostGiantsSegment = 0;
-// eslint-disable-next-line prefer-const
+
 let curFightJungleMonstersSegment = 0;
-// eslint-disable-next-line prefer-const
+
 let curThievesGuildSegment = 0;
 
 const options = {
@@ -601,9 +589,9 @@ function load(inChallenge) {
     if (toLoad.unreadActionStories === undefined) unreadActionStories = [];
     else {
         unreadActionStories = toLoad.unreadActionStories;
-        for (const name of unreadActionStories) {
-            showNotification(name);
-        }
+        //for (const name of unreadActionStories) {
+        //    showNotification(name);
+        //}
     }
 
     totalOfflineMs = toLoad.totalOfflineMs === undefined ? 0 : toLoad.totalOfflineMs;
@@ -642,7 +630,6 @@ function load(inChallenge) {
         location.reload();
     }
 
-    if(getExploreProgress() >= 100) addResource("glasses", true);
 
     adjustAll();
 

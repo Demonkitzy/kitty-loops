@@ -41,7 +41,6 @@ function loadChallenge() {
                 view.requestUpdate("updateSkills");
                 actions.restart();
                 view.requestUpdate("updateCurrentActionsDivs");
-                view.requestUpdate("updateTrials", null);
             }
             break;
     }

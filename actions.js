@@ -1,16 +1,20 @@
 "use strict";
 
-function Actions() {
-    this.current = [];
-    this.next = [];
-    this.addAmount = 1;
+class Actions {
 
-    this.totalNeeded = 0;
-    this.completedTicks = 0;
-    this.currentPos = 0;
-    this.timeSinceLastUpdate = 0;
+    constructor() {
 
-    this.tick = function() {
+        this.current = [];
+        this.next = [];
+        this.addAmount = 1;
+    
+        this.totalNeeded = 0;
+        this.completedTicks = 0;
+        this.currentPos = 0;
+        this.timeSinceLastUpdate = 0;
+    }
+
+    tick() {
         const curAction = this.getNextValidAction();
         // out of actions
         if (!curAction) {
@@ -103,7 +107,7 @@ function Actions() {
         }
     };
 
-    this.getNextValidAction = function() {
+    getNextValidAction() {
         let curAction = this.current[this.currentPos];
         if (!curAction) {
             return curAction;
@@ -127,7 +131,7 @@ function Actions() {
         return curAction;
     };
 
-    this.getErrorMessage = function(action) {
+    getErrorMessage(action) {
         if (action.townNum !== curTown) {
             return `You were in zone ${curTown + 1} when you tried this action, and needed to be in zone ${action.townNum + 1}`;
         }
@@ -137,7 +141,7 @@ function Actions() {
         return "??";
     };
 
-    this.restart = function() {
+    restart() {
         this.currentPos = 0;
         this.completedTicks = 0;
         curTown = 0;
@@ -210,7 +214,7 @@ function Actions() {
         view.requestUpdate("updateTime");
     };
 
-    this.adjustTicksNeeded = function() {
+    adjustTicksNeeded() {
         let remainingTicks = 0;
         for (let i = this.currentPos; i < this.current.length; i++) {
             const action = this.current[i];
@@ -222,7 +226,7 @@ function Actions() {
     };
 
 
-    this.addAction = function(action, loops, initialOrder, disabled) {
+    addAction(action, loops, initialOrder, disabled) {
         const toAdd = {};
         toAdd.name = action;
         if (disabled) toAdd.disabled = true;
