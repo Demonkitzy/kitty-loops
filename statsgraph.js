@@ -76,7 +76,7 @@ const statGraph = {
             }
         ];
         for (let i = 0; i < statList.length; i++) {
-            dataset[0].data.push((1 - (1 / (1 + getLevel(statList[i]) * 0.01))) * 100);
+            dataset[0].data.push((1 - (1 / (1 + getLevel(statList[i], player) * 0.01))) * 100);
         }
         return dataset;
     },

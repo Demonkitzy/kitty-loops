@@ -86,6 +86,19 @@ class Action{
         this.varName = withoutSpaces(name);
         Object.assign(this, extras);
     }
+    
+    // all actions to date with info text have the same info text, so presently this is
+    // centralized here (function will not be called by the game code if info text is not
+    // applicable)
+    infoText() {
+        return `${_txt(`actions>${getXMLName(this.name)}>info_text1`)}
+                <i class='fa fa-arrow-left'></i>
+                ${_txt(`actions>${getXMLName(this.name)}>info_text2`)}
+                <i class='fa fa-arrow-left'></i>
+                ${_txt(`actions>${getXMLName(this.name)}>info_text3`)}
+                <br><span class='bold'>${`${_txt("actions>tooltip>total_found")}: `}</span><div id='total${this.varName}'></div>
+                <br><span class='bold'>${`${_txt("actions>tooltip>total_checked")}: `}</span><div id='checked${this.varName}'></div>`;
+    };
 }
 
 /* eslint-disable no-invalid-this */
@@ -105,18 +118,6 @@ defineLazyGetter(Action.prototype, "labelDone", function() {
     return _txt(`actions>${getXMLName(this.name)}>label_done`);
 });
 
-// all actions to date with info text have the same info text, so presently this is
-// centralized here (function will not be called by the game code if info text is not
-// applicable)
-Action.prototype.infoText = function() {
-    return `${_txt(`actions>${getXMLName(this.name)}>info_text1`)}
-            <i class='fa fa-arrow-left'></i>
-            ${_txt(`actions>${getXMLName(this.name)}>info_text2`)}
-            <i class='fa fa-arrow-left'></i>
-            ${_txt(`actions>${getXMLName(this.name)}>info_text3`)}
-            <br><span class='bold'>${`${_txt("actions>tooltip>total_found")}: `}</span><div id='total${this.varName}'></div>
-            <br><span class='bold'>${`${_txt("actions>tooltip>total_checked")}: `}</span><div id='checked${this.varName}'></div>`;
-};
 
 // same as Action, but contains shared code to load segment names for multipart actions.
 // (constructor takes number of segments as a second argument)
@@ -137,7 +138,6 @@ defineLazyGetter(MultipartAction.prototype, "segmentNames", function() {
         _txtsObj(`actions>${getXMLName(this.name)}>segment_names>name`)
     ).map(elt => elt.textContent);
 });
-/* eslint-enable no-invalid-this */
 
 // same as MultipartAction, but includes shared code to generate dungeon completion tooltip
 // as well as specifying 7 segments (constructor takes dungeon ID number as a second
@@ -151,7 +151,7 @@ class DungeonAction extends MultipartAction{
     completedTooltip() {
         let ssDivContainer = "";
         if (this.dungeonNum < 3) {
-            for (let i = 0; i < dungeons[this.dungeonNum].length; i++) {
+            for (let i = 0; i < player.dungeons[this.dungeonNum].length; i++) {
                 ssDivContainer += `Floor ${i + 1} |
                                     <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>chance_label`)} </div> <div id='soulstoneChance${this.dungeonNum}_${i}'></div>% -
                                     <div class='bold'>${_txt(`actions>${getXMLName(this.name)}>last_stat_label`)} </div> <div id='soulstonePrevious${this.dungeonNum}_${i}'>NA</div> -
@@ -162,8 +162,8 @@ class DungeonAction extends MultipartAction{
     };
 
     getPartName() {
-        const floor = Math.floor((towns[this.townNum][`${this.varName}LoopCounter`] + 0.0001) / this.segments + 1);
-        return `${_txt(`actions>${getXMLName(this.name)}>label_part`)} ${floor <= dungeons[this.dungeonNum].length ? numberToWords(floor) : _txt(`actions>${getXMLName(this.name)}>label_complete`)}`;
+        const floor = Math.floor((player.towns[this.townNum][`${this.varName}LoopCounter`] + 0.0001) / this.segments + 1);
+        return `${_txt(`actions>${getXMLName(this.name)}>label_part`)} ${floor <= player.dungeons[this.dungeonNum].length ? numberToWords(floor) : _txt(`actions>${getXMLName(this.name)}>label_complete`)}`;
     };
 }
 
@@ -178,15 +178,15 @@ Action.Wander = new Action("Wander", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0].getLevel(this.varName) >= 20;
+                return player.towns[0].getLevel(this.varName) >= 20;
             case 2:
-                return towns[0].getLevel(this.varName) >= 40;
+                return player.towns[0].getLevel(this.varName) >= 40;
             case 3:
-                return towns[0].getLevel(this.varName) >= 60;
+                return player.towns[0].getLevel(this.varName) >= 60;
             case 4:
-                return towns[0].getLevel(this.varName) >= 80;
+                return player.towns[0].getLevel(this.varName) >= 80;
             case 5:
-                return towns[0].getLevel(this.varName) >= 100;
+                return player.towns[0].getLevel(this.varName) >= 100;
         }
         return false;
     },
@@ -198,7 +198,7 @@ Action.Wander = new Action("Wander", {
         Luck: 0.1
     },
     affectedBy: ["Buy Glasses"],
-    manaCost() {
+    manaCost(player) {
         return 250;
     },
     visible() {
@@ -207,19 +207,19 @@ Action.Wander = new Action("Wander", {
     unlocked() {
         return true;
     },
-    finish() {
-        towns[0].finishProgress(this.varName, 200 * (resources.glasses ? 4 : 1));
+    finish(player) {
+        player.towns[0].finishProgress(this.varName, 200 * (player.resources.glasses ? 4 : 1), player);
     }
 });
-function adjustPots() {
-    let town = towns[0];
+function adjustPots(player) {
+    let town = player.towns[0];
     let basePots = town.getLevel("Wander") * 5;
     town.totalPots = Math.floor(basePots);
 }
-function adjustLocks() {
-    let town = towns[0];
+function adjustLocks(player) {
+    let town = player.towns[0];
     let baseLocks = town.getLevel("Wander");
-    town.totalLocks = Math.floor(baseLocks * getSkillMod("Spatiomancy", 100, 300, .5));
+    town.totalLocks = Math.floor(baseLocks * getSkillMod("Spatiomancy", 100, 300, .5, player));
 }
 
 Action.SmashPots = new Action("Smash Pots", {
@@ -230,9 +230,9 @@ Action.SmashPots = new Action("Smash Pots", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0][`good${this.varName}`] >= 50;
+                return player.towns[0][`good${this.varName}`] >= 50;
             case 2:
-                return towns[0][`good${this.varName}`] >= 75;
+                return player.towns[0][`good${this.varName}`] >= 75;
         }
         return false;
     },
@@ -241,8 +241,8 @@ Action.SmashPots = new Action("Smash Pots", {
         Per: 0.2,
         Spd: 0.6
     },
-    manaCost() {
-        return Math.ceil(50 * getSkillBonus("Practical"));
+    manaCost(player) {
+        return Math.ceil(50 * getSkillBonus("Practical", player));
     },
     visible() {
         return true;
@@ -251,15 +251,15 @@ Action.SmashPots = new Action("Smash Pots", {
         return true;
     },
     // note this name is misleading: it is used for mana and gold gain.
-    goldCost() {
-        return Math.floor(100 * getSkillBonus("Dark"));
+    goldCost(player) {
+        return Math.floor(100 * getSkillBonus("Dark", player));
     },
-    finish() {
-        towns[0].finishRegular(this.varName, 10, () => {
-            const manaGain = this.goldCost();
-            addMana(manaGain);
+    finish(player) {
+        player.towns[0].finishRegular(this.varName, 10, () => {
+            const manaGain = this.goldCost(player);
+            addMana(manaGain, player);
             return manaGain;
-        });
+        }, player);
     }
 });
 
@@ -271,13 +271,13 @@ Action.PickLocks = new Action("Pick Locks", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0][`checked${this.varName}`] >= 1;
+                return player.towns[0][`checked${this.varName}`] >= 1;
             case 2:
-                return towns[0][`checked${this.varName}`] >= 50;
+                return player.towns[0][`checked${this.varName}`] >= 50;
             case 3:
-                return towns[0][`good${this.varName}`] >= 10;
+                return player.towns[0][`good${this.varName}`] >= 10;
             case 4:
-                return towns[0][`good${this.varName}`] >= 25;
+                return player.towns[0][`good${this.varName}`] >= 25;
         }
         return false;
     },
@@ -287,25 +287,25 @@ Action.PickLocks = new Action("Pick Locks", {
         Spd: 0.1,
         Luck: 0.1
     },
-    manaCost() {
+    manaCost(player) {
         return 400;
     },
     visible() {
-        return towns[0].getLevel("Wander") >= 3;
+        return player.towns[0].getLevel("Wander") >= 3;
     },
     unlocked() {
-        return towns[0].getLevel("Wander") >= 20;
+        return player.towns[0].getLevel("Wander") >= 20;
     },
-    goldCost() {
+    goldCost(player) {
         let base = 10;
-        return Math.floor(base * getSkillMod("Practical",0,200,1) + base * getSkillBonus("Thievery") - base);
+        return Math.floor(base * getSkillMod("Practical",0,200,1, player));
     },
-    finish() {
-        towns[0].finishRegular(this.varName, 10, () => {
-            const goldGain = this.goldCost();
-            addResource("gold", goldGain);
+    finish(player) {
+        player.towns[0].finishRegular(this.varName, 10, () => {
+            const goldGain = this.goldCost(player);
+            addResource("gold", goldGain, player);
             return goldGain;
-        });
+        }, player);
     }
 });
 
@@ -316,7 +316,7 @@ Action.BuyGlasses = new Action("Buy Glasses", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return storyReqs.glassesBought;
+                return player.storyReqs.glassesBought;
         }
         return false;
     },
@@ -324,29 +324,29 @@ Action.BuyGlasses = new Action("Buy Glasses", {
         Cha: 0.7,
         Spd: 0.3
     },
-    allowed() {
+    allowed(player) {
         return 1;
     },
-    canStart() {
-        return resources.gold >= 10;
+    canStart(player) {
+        return player.resources.gold >= 10;
     },
-    cost() {
-        addResource("gold", -10);
+    cost(player) {
+        addResource("gold", -10, player);
     },
-    manaCost() {
+    manaCost(player) {
         return 50;
     },
     visible() {
-        return towns[0].getLevel("Wander") >= 3;
+        return player.towns[0].getLevel("Wander") >= 3;
     },
     unlocked() {
-        return towns[0].getLevel("Wander") >= 20;
+        return player.towns[0].getLevel("Wander") >= 20;
     },
-    finish() {
-        addResource("glasses", true);
+    finish(player) {
+        addResource("glasses", true, player);
     },
-    story(completed) {
-        unlockStory("glassesBought");
+    story(completed, player) {
+        unlockStory("glassesBought", player);
     }
 });
 
@@ -358,7 +358,7 @@ Action.BuyManaZ1 = new Action("Buy Mana Z1", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0].getLevel("Met") > 0;
+                return player.towns[0].getLevel("Met") > 0;
         }
         return false;
     },
@@ -367,21 +367,21 @@ Action.BuyManaZ1 = new Action("Buy Mana Z1", {
         Int: 0.2,
         Luck: 0.1
     },
-    manaCost() {
+    manaCost(player) {
         return 100;
     },
     visible() {
-        return towns[0].getLevel("Wander") >= 3;
+        return player.towns[0].getLevel("Wander") >= 3;
     },
     unlocked() {
-        return towns[0].getLevel("Wander") >= 20;
+        return player.towns[0].getLevel("Wander") >= 20;
     },
-    goldCost() {
-        return Math.floor(50 * getSkillBonus("Mercantilism"));
+    goldCost(player) {
+        return Math.floor(50 * getSkillBonus("Mercantilism",player));
     },
-    finish() {
-        addMana(resources.gold * this.goldCost());
-        resetResource("gold");
+    finish(player) {
+        addMana(player.resources.gold * this.goldCost(player), player);
+        resetResource("gold", player);
     },
 });
 
@@ -393,17 +393,17 @@ Action.MeetPeople = new Action("Meet People", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0].getLevel(this.varName) >= 1;
+                return player.towns[0].getLevel(this.varName) >= 1;
             case 2:
-                return towns[0].getLevel(this.varName) >= 20;
+                return player.towns[0].getLevel(this.varName) >= 20;
             case 3:
-                return towns[0].getLevel(this.varName) >= 40;
+                return player.towns[0].getLevel(this.varName) >= 40;
             case 4:
-                return towns[0].getLevel(this.varName) >= 60;
+                return player.towns[0].getLevel(this.varName) >= 60;
             case 5:
-                return towns[0].getLevel(this.varName) >= 80;
+                return player.towns[0].getLevel(this.varName) >= 80;
             case 6:
-                return towns[0].getLevel(this.varName) >= 100;
+                return player.towns[0].getLevel(this.varName) >= 100;
         }
         return false;
     },
@@ -412,23 +412,24 @@ Action.MeetPeople = new Action("Meet People", {
         Cha: 0.8,
         Soul: 0.1
     },
-    manaCost() {
+    manaCost(player) {
         return 800;
     },
     visible() {
-        return towns[0].getLevel("Wander") >= 10;
+        return player.towns[0].getLevel("Wander") >= 10;
     },
     unlocked() {
-        return towns[0].getLevel("Wander") >= 22;
+        return player.towns[0].getLevel("Wander") >= 22;
     },
-    finish() {
-        towns[0].finishProgress(this.varName, 200);
+    finish(player) {
+        player.towns[0].finishProgress(this.varName, 200, player);
     },
 });
-function adjustSQuests() {
-    let town = towns[0];
+
+function adjustSQuests(player) {
+    let town = player.towns[0];
     let baseSQuests = town.getLevel("Met");
-    town.totalSQuests = Math.floor(baseSQuests * getSkillMod("Spatiomancy", 200, 400, .5));
+    town.totalSQuests = Math.floor(baseSQuests * getSkillMod("Spatiomancy", 200, 400, .5, player));
 }
 
 Action.TrainStrength = new Action("Train Strength", {
@@ -438,15 +439,15 @@ Action.TrainStrength = new Action("Train Strength", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return storyReqs.strengthTrained;
+                return player.storyReqs.strengthTrained;
             case 2:
-                return getTalent("Str") >= 100;
+                return getTalent("Str", player) >= 100;
             case 3:
-                return getTalent("Str") >= 1000;
+                return getTalent("Str", player) >= 1000;
             case 4:
-                return getTalent("Str") >= 10000;
+                return getTalent("Str", player) >= 10000;
             case 5:
-                return getTalent("Str") >= 100000;
+                return getTalent("Str", player) >= 100000;
         }
         return false;
     },
@@ -454,23 +455,22 @@ Action.TrainStrength = new Action("Train Strength", {
         Str: 0.8,
         Con: 0.2
     },
-    allowed() {
-        return trainingLimits;
+    allowed(player) {
+        return player.trainingLimits;
     },
-    manaCost() {
+    manaCost(player) {
         return 2000;
     },
     visible() {
-        return towns[0].getLevel("Met") >= 1;
+        return player.towns[0].getLevel("Met") >= 1;
     },
     unlocked() {
-        return towns[0].getLevel("Met") >= 5;
+        return player.towns[0].getLevel("Met") >= 5;
     },
-    finish() {
-
+    finish(player) {
     },
-    story(completed) {
-        unlockStory("strengthTrained");
+    story(completed, player) {
+        unlockStory("strengthTrained", player);
     }
 });
 
@@ -482,13 +482,13 @@ Action.ShortQuest = new Action("Short Quest", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0][`checked${this.varName}`] >= 1;
+                return player.towns[0][`checked${this.varName}`] >= 1;
             case 2:
                 // 20 short quests in a loop
-                return storyReqs.maxSQuestsInALoop;
+                return player.storyReqs.maxSQuestsInALoop;
             case 3:
                 // 50 short quests in a loop
-                return storyReqs.realMaxSQuestsInALoop;
+                return player.storyReqs.realMaxSQuestsInALoop;
         }
         return false;
     },
@@ -500,30 +500,31 @@ Action.ShortQuest = new Action("Short Quest", {
         Luck: 0.1,
         Soul: 0.1
     },
-    manaCost() {
+    manaCost(player) {
         return 600;
     },
     visible() {
-        return towns[0].getLevel("Met") >= 1;
+        return player.towns[0].getLevel("Met") >= 1;
     },
     unlocked() {
-        return towns[0].getLevel("Met") >= 5;
+        return player.towns[0].getLevel("Met") >= 5;
     },
-    goldCost() {
+    goldCost(player) {
         let base = 20;
-        return Math.floor(base * getSkillMod("Practical",100,300,1));
+        return Math.floor(base * getSkillMod("Practical",100,300,1,player));
     },
-    finish() {
-        towns[0].finishRegular(this.varName, 5, () => {
-            const goldGain = this.goldCost();
-            addResource("gold", goldGain);
+    finish(player) {
+        player.towns[0].finishRegular(this.varName, 5, () => {
+            const goldGain = this.goldCost(player);
+            addResource("gold", goldGain, player);
             return goldGain;
-        });
+        }, player);
     },
-    story(completed) {
-        if (towns[0][`good${this.varName}`] >= 20 && towns[0][`goodTemp${this.varName}`] <= towns[0][`good${this.varName}`] - 20) unlockStory("maxSQuestsInALoop");
-        if (towns[0][`good${this.varName}`] >= 50 && towns[0][`goodTemp${this.varName}`] <= towns[0][`good${this.varName}`] - 50) unlockStory("realMaxSQuestsInALoop");
+    story(completed, player) {
+        if (player.towns[0][`good${this.varName}`] >= 20 && player.towns[0][`goodTemp${this.varName}`] <= player.towns[0][`good${this.varName}`] - 20) unlockStory("maxSQuestsInALoop",player);
+        if (player.towns[0][`good${this.varName}`] >= 50 && player.towns[0][`goodTemp${this.varName}`] <= player.towns[0][`good${this.varName}`] - 50) unlockStory("realMaxSQuestsInALoop",player);
     }
+    
 });
 
 Action.Investigate = new Action("Investigate", {
@@ -534,15 +535,15 @@ Action.Investigate = new Action("Investigate", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0].getLevel(this.varName) >= 20;
+                return player.towns[0].getLevel(this.varName) >= 20;
             case 2:
-                return towns[0].getLevel(this.varName) >= 40;
+                return player.towns[0].getLevel(this.varName) >= 40;
             case 3:
-                return towns[0].getLevel(this.varName) >= 60;
+                return player.towns[0].getLevel(this.varName) >= 60;
             case 4:
-                return towns[0].getLevel(this.varName) >= 80;
+                return player.towns[0].getLevel(this.varName) >= 80;
             case 5:
-                return towns[0].getLevel(this.varName) >= 100;
+                return player.towns[0].getLevel(this.varName) >= 100;
         }
         return false;
     },
@@ -552,23 +553,23 @@ Action.Investigate = new Action("Investigate", {
         Spd: 0.2,
         Luck: 0.1
     },
-    manaCost() {
+    manaCost(player) {
         return 1000;
     },
     visible() {
-        return towns[0].getLevel("Met") >= 5;
+        return player.towns[0].getLevel("Met") >= 5;
     },
     unlocked() {
-        return towns[0].getLevel("Met") >= 25;
+        return player.towns[0].getLevel("Met") >= 25;
     },
-    finish() {
-        towns[0].finishProgress(this.varName, 500);
+    finish(player) {
+        player.towns[0].finishProgress(this.varName, 500, player);
     },
 });
-function adjustLQuests() {
-    let town = towns[0];
+function adjustLQuests(player) {
+    let town = player.towns[0];
     let baseLQuests = town.getLevel("Secrets") / 2;
-    town.totalLQuests = Math.floor(baseLQuests * getSkillMod("Spatiomancy", 300, 500, .5));
+    town.totalLQuests = Math.floor(baseLQuests * getSkillMod("Spatiomancy", 300, 500, .5,player));
 }
 
 Action.LongQuest = new Action("Long Quest", {
@@ -579,13 +580,13 @@ Action.LongQuest = new Action("Long Quest", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0][`checked${this.varName}`] >= 1;
+                return player.towns[0][`checked${this.varName}`] >= 1;
             case 2:
                 // 10 long quests in a loop
-                return storyReqs.maxLQuestsInALoop;
+                return player.storyReqs.maxLQuestsInALoop;
             case 3:
                 // 25 long quests in a loop
-                return storyReqs.realMaxLQuestsInALoop;
+                return player.storyReqs.realMaxLQuestsInALoop;
         }
         return false;
     },
@@ -595,30 +596,31 @@ Action.LongQuest = new Action("Long Quest", {
         Con: 0.4,
         Spd: 0.2
     },
-    manaCost() {
+    manaCost(player) {
         return 1500;
     },
     visible() {
-        return towns[0].getLevel("Secrets") >= 1;
+        return player.towns[0].getLevel("Secrets") >= 1;
     },
     unlocked() {
-        return towns[0].getLevel("Secrets") >= 10;
+        return player.towns[0].getLevel("Secrets") >= 10;
     },
-    goldCost() {
+    goldCost(player) {
         let base = 30;
-        return Math.floor(base * getSkillMod("Practical",200,400,1));
+        return Math.floor(base * getSkillMod("Practical",200,400,1,player));
     },
-    finish() {
-        towns[0].finishRegular(this.varName, 5, () => {
-            addResource("reputation", 1);
-            const goldGain = this.goldCost();
-            addResource("gold", goldGain);
+    finish(player) {
+        player.towns[0].finishRegular(this.varName, 5, () => {
+            addResource("reputation", 1, player);
+            const goldGain = this.goldCost(player);
+            addResource("gold", goldGain, player);
             return goldGain;
-        });
+        }, player);
+        
     },
-    story(completed) {
-        if (towns[0][`good${this.varName}`] >= 10 && towns[0][`goodTemp${this.varName}`] <= towns[0][`good${this.varName}`] - 10) unlockStory("maxLQuestsInALoop");
-        if (towns[0][`good${this.varName}`] >= 25 && towns[0][`goodTemp${this.varName}`] <= towns[0][`good${this.varName}`] - 25) unlockStory("realMaxLQuestsInALoop");
+    story(completed, player) {
+        if (player.towns[0][`good${this.varName}`] >= 10 && player.towns[0][`goodTemp${this.varName}`] <= player.towns[0][`good${this.varName}`] - 10) unlockStory("maxLQuestsInALoop", player);
+        if (player.towns[0][`good${this.varName}`] >= 25 && player.towns[0][`goodTemp${this.varName}`] <= player.towns[0][`good${this.varName}`] - 25) unlockStory("realMaxLQuestsInALoop", player);
     }
 });
 
@@ -629,9 +631,9 @@ Action.ThrowParty = new Action("Throw Party", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return storyReqs.partyThrown;
+                return player.storyReqs.partyThrown;
             case 2:
-                return storyReqs.partyThrown2;
+                return player.storyReqs.partyThrown2;
         }
         return false;
     },
@@ -639,27 +641,27 @@ Action.ThrowParty = new Action("Throw Party", {
         Cha: 0.8,
         Soul: 0.2
     },
-    manaCost() {
+    manaCost(player) {
         return 1600;
     },
-    canStart() {
-        return resources.reputation >= 2;
+    canStart(player) {
+        return player.resources.reputation >= 2;
     },
-    cost() {
-        addResource("reputation", -2);
+    cost(player) {
+        addResource("reputation", -2, player);
     },
     visible() {
-        return towns[this.townNum].getLevel("Secrets") >= 20;
+        return player.towns[this.townNum].getLevel("Secrets") >= 20;
     },
     unlocked() {
-        return towns[this.townNum].getLevel("Secrets") >= 30;
+        return player.towns[this.townNum].getLevel("Secrets") >= 30;
     },
-    finish() {
-        towns[0].finishProgress("Met", 3200);
+    finish(player) {
+        player.towns[0].finishProgress("Met", 3200, player);
     },
-    story(completed) {
-        unlockStory("partyThrown");
-        if (completed >= 10) unlockStory("partyThrown2");
+    story(completed,player) {
+        unlockStory("partyThrown",player);
+        if (completed >= 10) unlockStory("partyThrown2",player);
     }
 });
 
@@ -670,15 +672,15 @@ Action.WarriorLessons = new Action("Warrior Lessons", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return getSkillLevel("Combat") >= 1;
+                return getSkillLevel("Combat", player) >= 1;
             case 2:
-                return getSkillLevel("Combat") >= 100;
+                return getSkillLevel("Combat", player) >= 100;
             case 3:
-                return getSkillLevel("Combat") >= 200;
+                return getSkillLevel("Combat", player) >= 200;
             case 4:
-                return getSkillLevel("Combat") >= 250;
+                return getSkillLevel("Combat", player) >= 250;
             case 5:
-                return getSkillLevel("Combat") >= 1000;
+                return getSkillLevel("Combat", player) >= 1000;
         }
         return false;
     },
@@ -690,20 +692,20 @@ Action.WarriorLessons = new Action("Warrior Lessons", {
     skills: {
         Combat: 100
     },
-    manaCost() {
+    manaCost(player) {
         return 1000;
     },
-    canStart() {
-        return resources.reputation >= 2;
+    canStart(player) {
+        return player.resources.reputation >= 2;
     },
     visible() {
-        return towns[0].getLevel("Secrets") >= 10;
+        return player.towns[0].getLevel("Secrets") >= 10;
     },
     unlocked() {
-        return towns[0].getLevel("Secrets") >= 20;
+        return player.towns[0].getLevel("Secrets") >= 20;
     },
-    finish() {
-        handleSkillExp(this.skills);
+    finish(player) {
+        handleSkillExp(this.skills,player);
     },
 });
 
@@ -714,19 +716,19 @@ Action.MageLessons = new Action("Mage Lessons", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return getSkillLevel("Magic") >= 1;
+                return getSkillLevel("Magic",player) >= 1;
             case 2:
-                return getSkillLevel("Magic") >= 100;
+                return getSkillLevel("Magic",player) >= 100;
             case 3:
-                return getSkillLevel("Magic") >= 200;
+                return getSkillLevel("Magic",player) >= 200;
             case 4:
-                return getSkillLevel("Magic") >= 250;
+                return getSkillLevel("Magic",player) >= 250;
             case 5:
-                return getSkillLevel("Alchemy") >= 10;
+                return getSkillLevel("Alchemy",player) >= 10;
             case 6:
-                return getSkillLevel("Alchemy") >= 50;
+                return getSkillLevel("Alchemy",player) >= 50;
             case 7:
-                return getSkillLevel("Alchemy") >= 100;
+                return getSkillLevel("Alchemy",player) >= 100;
         }
         return false;
     },
@@ -736,24 +738,24 @@ Action.MageLessons = new Action("Mage Lessons", {
         Con: 0.2
     },
     skills: {
-        Magic() {
-            return 100 * (1 + getSkillLevel("Alchemy") / 100);
+        Magic(player) {
+            return 100 * (1 + getSkillLevel("Alchemy",player) / 100);
         }
     },
-    manaCost() {
+    manaCost(player) {
         return 1000;
     },
-    canStart() {
-        return resources.reputation >= 2;
+    canStart(player) {
+        return player.resources.reputation >= 2;
     },
     visible() {
-        return towns[0].getLevel("Secrets") >= 10;
+        return player.towns[0].getLevel("Secrets") >= 10;
     },
     unlocked() {
-        return towns[0].getLevel("Secrets") >= 20;
+        return player.towns[0].getLevel("Secrets") >= 20;
     },
-    finish() {
-        handleSkillExp(this.skills);
+    finish(player) {
+        handleSkillExp(this.skills, player);
     },
 });
 
@@ -765,19 +767,19 @@ Action.HealTheSick = new MultipartAction("Heal The Sick", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0].totalHeal >= 1;
+                return player.towns[0].totalHeal >= 1;
             case 2:
                 // 10 patients healed in a loop
-                return storyReqs.heal10PatientsInALoop;
+                return player.storyReqs.heal10PatientsInALoop;
             case 3:
-                return towns[0].totalHeal >= 100;
+                return player.towns[0].totalHeal >= 100;
             case 4:
-                return towns[0].totalHeal >= 1000;
+                return player.towns[0].totalHeal >= 1000;
             case 5:
                 // fail reputation req
-                return storyReqs.failedHeal;
+                return player.storyReqs.failedHeal;
             case 6:
-                return getSkillLevel("Restoration") >= 50;
+                return getSkillLevel("Restoration",player) >= 50;
         }
         return false;
     },
@@ -791,35 +793,35 @@ Action.HealTheSick = new MultipartAction("Heal The Sick", {
         Magic: 10
     },
     loopStats: ["Per", "Int", "Cha"],
-    manaCost() {
+    manaCost(player) {
         return 2500;
     },
-    canStart() {
-        return resources.reputation >= 1;
+    canStart(player) {
+        return player.resources.reputation >= 1;
     },
-    loopCost(segment) {
-        return fibonacci(2 + Math.floor((towns[0].HealLoopCounter + segment) / this.segments + 0.0000001)) * 5000;
+    loopCost(segment, player) {
+        return fibonacci(2 + Math.floor((player.towns[0].HealLoopCounter + segment) / this.segments + 0.0000001)) * 5000;
     },
-    tickProgress(offset) {
-        return getSkillLevel("Magic") * Math.max(getSkillLevel("Restoration") / 50, 1) * (1 + getLevel(this.loopStats[(towns[0].HealLoopCounter + offset) % this.loopStats.length]) / 100) * Math.sqrt(1 + towns[0].totalHeal / 100);
+    tickProgress(offset, player) {
+        return getSkillLevel("Magic",player) * Math.max(getSkillLevel("Restoration",player) / 50, 1) * (1 + getLevel(this.loopStats[(player.towns[0].HealLoopCounter + offset) % this.loopStats.length], player) / 100) * Math.sqrt(1 + player.towns[0].totalHeal / 100);
     },
-    loopsFinished() {
-        addResource("reputation", 3);
+    loopsFinished(player) {
+        addResource("reputation", 3, player);
     },
     getPartName() {
-        return `${_txt(`actions>${getXMLName(this.name)}>label_part`)} ${numberToWords(Math.floor((towns[0].HealLoopCounter + 0.0001) / this.segments + 1))}`;
+        return `${_txt(`actions>${getXMLName(this.name)}>label_part`)} ${numberToWords(Math.floor((player.towns[0].HealLoopCounter + 0.0001) / this.segments + 1))}`;
     },
     visible() {
-        return towns[0].getLevel("Secrets") >= 20;
+        return player.towns[0].getLevel("Secrets") >= 20;
     },
     unlocked() {
-        return getSkillLevel("Magic") >= 12;
+        return getSkillLevel("Magic",player) >= 12;
     },
-    finish() {
-        handleSkillExp(this.skills);
+    finish(player) {
+        handleSkillExp(this.skills,player);
     },
-    story(completed) {
-        if (towns[0].HealLoopCounter / 3 + 1 >= 10) unlockStory("heal10PatientsInALoop");
+    story(completed,player) {
+        if (player.towns[0].HealLoopCounter / 3 + 1 >= 10) unlockStory("heal10PatientsInALoop",player);
     }
 });
 
@@ -831,19 +833,19 @@ Action.FightMonsters = new MultipartAction("Fight Monsters", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return towns[0].totalFight >= 1;
+                return player.towns[0].totalFight >= 1;
             case 2:
-                return towns[0].totalFight >= 100;
+                return player.towns[0].totalFight >= 100;
             case 3:
-                return towns[0].totalFight >= 500;
+                return player.towns[0].totalFight >= 500;
             case 4:
-                return towns[0].totalFight >= 1000;
+                return player.towns[0].totalFight >= 1000;
             case 5:
-                return towns[0].totalFight >= 5000;
+                return player.towns[0].totalFight >= 5000;
             case 6:
-                return towns[0].totalFight >= 10000;
+                return player.towns[0].totalFight >= 10000;
             case 7:
-                return towns[0].totalFight >= 20000;
+                return player.towns[0].totalFight >= 20000;
         }
         return false;
     },
@@ -857,26 +859,26 @@ Action.FightMonsters = new MultipartAction("Fight Monsters", {
         Combat: 10
     },
     loopStats: ["Spd", "Spd", "Spd", "Str", "Str", "Str", "Con", "Con", "Con"],
-    manaCost() {
+    manaCost(player) {
         return 2000;
     },
-    canStart() {
-        return resources.reputation >= 2;
+    canStart(player) {
+        return player.resources.reputation >= 2;
     },
-    loopCost(segment) {
-        return fibonacci(Math.floor((towns[0].FightLoopCounter + segment) - towns[0].FightLoopCounter / 3 + 0.0000001)) * 10000;
+    loopCost(segment,player) {
+        return fibonacci(Math.floor((player.towns[0].FightLoopCounter + segment) - player.towns[0].FightLoopCounter / 3 + 0.0000001)) * 10000;
     },
-    tickProgress(offset) {
-        return getSelfCombat() * (1 + getLevel(this.loopStats[(towns[0].FightLoopCounter + offset) % this.loopStats.length]) / 100) * Math.sqrt(1 + towns[0].totalFight / 100);
+    tickProgress(offset,player) {
+        return getSelfCombat(player) * (1 + getLevel(this.loopStats[(player.towns[0].FightLoopCounter + offset) % this.loopStats.length], player) / 100) * Math.sqrt(1 + player.towns[0].totalFight / 100);
     },
-    loopsFinished() {
+    loopsFinished(player) {
         // empty
     },
-    segmentFinished() {
-        addResource("gold", 20);
+    segmentFinished(player) {
+        addResource("gold", 20,player);
     },
     getPartName() {
-        const monster = Math.floor(towns[0].FightLoopCounter / 3 + 0.0000001);
+        const monster = Math.floor(player.towns[0].FightLoopCounter / 3 + 0.0000001);
         if (monster >= this.segmentNames.length) return this.altSegmentNames[monster % 3];
         return this.segmentNames[monster];
     },
@@ -884,13 +886,13 @@ Action.FightMonsters = new MultipartAction("Fight Monsters", {
         return `${this.segmentModifiers[segment % 3]} ${this.getPartName()}`;
     },
     visible() {
-        return towns[0].getLevel("Secrets") >= 20;
+        return player.towns[0].getLevel("Secrets") >= 20;
     },
     unlocked() {
-        return getSkillLevel("Combat") >= 10;
+        return getSkillLevel("Combat",player) >= 10;
     },
-    finish() {
-        handleSkillExp(this.skills);
+    finish(player) {
+        handleSkillExp(this.skills,player);
     },
 });
 // lazily loaded to allow localization code to load first
@@ -909,15 +911,15 @@ Action.SmallDungeon = new DungeonAction("Small Dungeon", 0, {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return storyReqs.smallDungeonAttempted;
+                return player.storyReqs.smallDungeonAttempted;
             case 2:
-                return towns[0][`total${this.varName}`] >= 1000;
+                return player.towns[0][`total${this.varName}`] >= 1000;
             case 3:
-                return towns[0][`total${this.varName}`] >= 5000;
+                return player.towns[0][`total${this.varName}`] >= 5000;
             case 4:
-                return towns[0][`total${this.varName}`] >= 10000;
+                return player.towns[0][`total${this.varName}`] >= 10000;
             case 5:
-                return storyReqs.clearSDungeon;
+                return player.storyReqs.clearSDungeon;
         }
         return false;
     },
@@ -933,59 +935,62 @@ Action.SmallDungeon = new DungeonAction("Small Dungeon", 0, {
         Magic: 5
     },
     loopStats: ["Dex", "Con", "Dex", "Cha", "Dex", "Str", "Luck"],
-    manaCost() {
+    manaCost(player) {
         return 2000;
     },
-    canStart() {
-        const curFloor = Math.floor((towns[this.townNum].SDungeonLoopCounter) / this.segments + 0.0000001);
-        return resources.reputation >= 2 && curFloor < dungeons[this.dungeonNum].length;
+    canStart(player) {
+        const curFloor = Math.floor((player.towns[this.townNum].SDungeonLoopCounter) / this.segments + 0.0000001);
+        return player.resources.reputation >= 2 && curFloor < player.dungeons[this.dungeonNum].length;
     },
-    loopCost(segment) {
-        return precision3(Math.pow(2, Math.floor((towns[this.townNum].SDungeonLoopCounter + segment) / this.segments + 0.0000001)) * 15000);
+    loopCost(segment,player) {
+        return precision3(Math.pow(2, Math.floor((player.towns[this.townNum].SDungeonLoopCounter + segment) / this.segments + 0.0000001)) * 15000);
     },
-    tickProgress(offset) {
-        const floor = Math.floor((towns[this.townNum].SDungeonLoopCounter) / this.segments + 0.0000001);
-        return (getSelfCombat() + getSkillLevel("Magic")) *
-            (1 + getLevel(this.loopStats[(towns[this.townNum].SDungeonLoopCounter + offset) % this.loopStats.length]) / 100) *
-            Math.sqrt(1 + dungeons[this.dungeonNum][floor].completed / 200);
+    tickProgress(offset,player) {
+        const floor = Math.floor((player.towns[this.townNum].SDungeonLoopCounter) / this.segments + 0.0000001);
+        return (getSelfCombat(player) + getSkillLevel("Magic",player)) *
+            (1 + getLevel(this.loopStats[(player.towns[this.townNum].SDungeonLoopCounter + offset) % this.loopStats.length], player) / 100) *
+            Math.sqrt(1 + player.dungeons[this.dungeonNum][floor].completed / 200);
     },
-    loopsFinished() {
-        const curFloor = Math.floor((towns[this.townNum].SDungeonLoopCounter) / this.segments + 0.0000001 - 1);
-        const success = finishDungeon(this.dungeonNum, curFloor);
-        if (success === true && storyMax <= 1) {
-            unlockGlobalStory(1);
-        } else if (success === false && storyMax <= 2) {
-            unlockGlobalStory(2);
+    loopsFinished(player) {
+        const curFloor = Math.floor((player.towns[this.townNum].SDungeonLoopCounter) / this.segments + 0.0000001 - 1);
+        const success = finishDungeon(this.dungeonNum, curFloor, player);
+        if (success === true && player.storyMax <= 1) {
+            unlockGlobalStory(1, player);
+        } else if (success === false && player.storyMax <= 2) {
+            unlockGlobalStory(2, player);
         }
     },
     visible() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 15;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 15;
     },
     unlocked() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 35;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 35;
     },
-    finish() {
-        handleSkillExp(this.skills);
+    finish(player) {
+        handleSkillExp(this.skills,player);
     },
-    story(completed) {
-        unlockStory("smallDungeonAttempted");
-        if (towns[this.townNum][this.varName + "LoopCounter"] >= 42) unlockStory("clearSDungeon");
+    story(completed,player) {
+        unlockStory("smallDungeonAttempted",player);
+        if (player.towns[this.townNum][this.varName + "LoopCounter"] >= 42) unlockStory("clearSDungeon",player);
     },
 });
-function finishDungeon(dungeonNum, floorNum) {
-    const floor = dungeons[dungeonNum][floorNum];
+function finishDungeon(dungeonNum, floorNum, state) {
+    const floor = state.dungeons[dungeonNum][floorNum];
     if (!floor) {
         return false;
     }
     floor.completed++;
     const rand = Math.random();
-    if (rand <= floor.ssChance) {
+    if (state === player && rand <= floor.ssChance) {
         const statToAdd = statList[Math.floor(Math.random() * statList.length)];
         floor.lastStat = statToAdd;
-        stats[statToAdd].soulstone = stats[statToAdd].soulstone ? (stats[statToAdd].soulstone + Math.floor(Math.pow(10, dungeonNum) * getSkillBonus("Divine"))) : 1;
+        state.stats[statToAdd].soulstone = state.stats[statToAdd].soulstone ? (state.stats[statToAdd].soulstone + Math.floor(Math.pow(10, dungeonNum) * getSkillBonus("Divine",state))) : 1;
         floor.ssChance *= 0.98;
         view.requestUpdate("updateSoulstones",null);
         return true;
+    }
+    if (state !== player) {
+        state.ssCount += Math.floor(Math.pow(10, dungeonNum) * getSkillBonus("Divine", state))
     }
     return false;
 }
@@ -997,9 +1002,9 @@ Action.BuySupplies = new Action("Buy Supplies", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return storyReqs.suppliesBought;
+                return player.storyReqs.suppliesBought;
             case 2:
-                return storyReqs.suppliesBoughtWithoutHaggling;
+                return player.storyReqs.suppliesBoughtWithoutHaggling;
         }
         return false;
     },
@@ -1008,30 +1013,30 @@ Action.BuySupplies = new Action("Buy Supplies", {
         Luck: 0.1,
         Soul: 0.1
     },
-    allowed() {
+    allowed(player) {
         return 1;
     },
-    manaCost() {
+    manaCost(player) {
         return 200;
     },
-    canStart() {
-        return resources.gold >= towns[0].suppliesCost && !resources.supplies;
+    canStart(player) {
+        return player.resources.gold >= player.towns[0].suppliesCost && !player.resources.supplies;
     },
-    cost() {
-        addResource("gold", -towns[0].suppliesCost);
+    cost(player) {
+        addResource("gold", -player.towns[0].suppliesCost, player);
     },
     visible() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 15;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 15;
     },
     unlocked() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 35;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 35;
     },
-    finish() {
-        addResource("supplies", true);
+    finish(player) {
+        addResource("supplies", true, player);
     },
-    story(completed) {
-        unlockStory("suppliesBought");
-        if (towns[0].suppliesCost === 300) unlockStory("suppliesBoughtWithoutHaggling");
+    story(completed, player) {
+        unlockStory("suppliesBought",player);
+        if (player.towns[0].suppliesCost === 300) unlockStory("suppliesBoughtWithoutHaggling", player);
     }
 });
 
@@ -1042,11 +1047,11 @@ Action.Haggle = new Action("Haggle", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return storyReqs.haggle;
+                return player.storyReqs.haggle;
             case 2:
-                return storyReqs.haggle15TimesInALoop;
+                return player.storyReqs.haggle15TimesInALoop;
             case 3:
-                return storyReqs.haggle16TimesInALoop;
+                return player.storyReqs.haggle16TimesInALoop;
         }
         return false;
     },
@@ -1055,32 +1060,32 @@ Action.Haggle = new Action("Haggle", {
         Luck: 0.1,
         Soul: 0.1
     },
-    manaCost() {
+    manaCost(player) {
         return 100;
     },
-    canStart() {
-        return resources.reputation >= 1;
+    canStart(player) {
+        return player.resources.reputation >= 1;
     },
-    cost() {
-        addResource("reputation", -1);
+    cost(player) {
+        addResource("reputation", -1, player);
     },
     visible() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 15;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 15;
     },
     unlocked() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 35;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 35;
     },
-    finish() {
-        towns[0].suppliesCost -= 20;
-        if (towns[0].suppliesCost < 0) {
-            towns[0].suppliesCost = 0;
+    finish(state) {
+        state.towns[0].suppliesCost -= 20;
+        if (state.towns[0].suppliesCost < 0) {
+            state.towns[0].suppliesCost = 0;
         }
-        view.requestUpdate("updateResource", "supplies");
+        if (state === player) view.requestUpdate("updateResource", "supplies");
     },
-    story(completed) {
-        if (completed >= 15) unlockStory("haggle15TimesInALoop");
-        if (completed >= 16) unlockStory("haggle16TimesInALoop");
-        unlockStory("haggle");
+    story(completed, player) {
+        if (completed >= 15) unlockStory("haggle15TimesInALoop",player);
+        if (completed >= 16) unlockStory("haggle16TimesInALoop",player);
+        unlockStory("haggle",player);
     }
 });
 
@@ -1091,7 +1096,7 @@ Action.StartJourney = new Action("Start Journey", {
     storyReqs(storyNum) {
         switch (storyNum) {
             case 1:
-                return townsUnlocked.includes(1);
+                return player.townsUnlocked.includes(1);
         }
         return false;
     },
@@ -1100,29 +1105,29 @@ Action.StartJourney = new Action("Start Journey", {
         Per: 0.3,
         Spd: 0.3
     },
-    allowed() {
+    allowed(player) {
         return 1;
     },
-    manaCost() {
+    manaCost(player) {
         return 1000;
     },
-    canStart() {
-        return resources.supplies;
+    canStart(player) {
+        return player.resources.supplies;
     },
-    cost() {
-        addResource("supplies", false);
+    cost(player) {
+        addResource("supplies", false,player);
     },
     visible() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 15;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 15;
     },
     unlocked() {
-        return (getSkillLevel("Combat") + getSkillLevel("Magic")) >= 35;
+        return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 35;
     },
-    finish() {
-        unlockTown(1);
+    finish(player) {
+        unlockTown(1, player);
     },
-    story(completed) {
-        unlockGlobalStory(3);
+    story(completed,player) {
+        unlockGlobalStory(3,player);
     }
 });
 

@@ -16,7 +16,7 @@ function cheat() {
 
 function cheatBonus()
 {
-    totalOfflineMs = 1000000000000000;
+    player.totalOfflineMs = 1000000000000000;
 }
 
 function cheatProgress()
@@ -25,8 +25,8 @@ function cheatProgress()
     {
         if (action.type == "progress")
         {
-            towns[action.townNum][`exp${action.varName}`] = 505000;
-            view.updateProgressAction({name: action.varName, town: towns[action.townNum]});
+            player.towns[action.townNum][`exp${action.varName}`] = 505000;
+            view.updateProgressAction({name: action.varName, town: player.towns[action.townNum]});
         }
     }
 }
@@ -34,27 +34,27 @@ function cheatProgress()
 function cheatTalent(stat, targetTalentLevel)
 {
     if (stat === "all" || stat === "All")
-        for (const stat in stats)
-        stats[stat].talent = getExpOfLevel(targetTalentLevel);
-    else stats[stat].talent = getExpOfLevel(targetTalentLevel);
+        for (const stat in player.stats)
+        player.stats[stat].talent = getExpOfLevel(targetTalentLevel);
+    else player.stats[stat].talent = getExpOfLevel(targetTalentLevel);
     view.updateStats();
 }
 
 function cheatSoulstone(stat, targetSS)
 {
     if (stat === "all" || stat === "All")
-        for (const stat in stats)
-            stats[stat].soulstone = targetSS;
-    else stats[stat].soulstone = targetSS;
+        for (const stat in player.stats)
+            player.stats[stat].soulstone = targetSS;
+    else player.stats[stat].soulstone = targetSS;
     view.updateSoulstones();
 }
 
 function cheatSkill(skill, targetSkillLevel)
 {
     if (skill === "all" || skill === "All")
-        for (const skill in skills)
+        for (const skill in player.skills)
             skill[skill].exp = getExpOfLevel(targetSkillLevel);
-    else skills[skill].exp = getExpOfLevel(targetSkillLevel);
+    else player.skills[skill].exp = getExpOfLevel(targetSkillLevel);
     view.updateSkills();
 }
 
@@ -69,18 +69,14 @@ if (window.location.href.includes("http://127.0.0.1:5500")) document.getElementB
 
 const timeNeededInitial = 5 * 50;
 let timer = timeNeededInitial;
-let timeNeeded = timeNeededInitial;
 let stop = false;
 const view = new View();
 const actions = new Actions();
-const towns = [];
-let curTown = 0;
+const player = new Player();
 
 const statList = ["Dex", "Str", "Con", "Spd", "Per", "Cha", "Int", "Luck", "Soul"];
-const stats = {};
-let totalTalent = 0;
 let shouldRestart = true;
-let resources = {
+const resourcesTemplate = {
     gold: 0,
     reputation: 0,
     //herbs: 0,
@@ -105,24 +101,15 @@ let resources = {
     //key: false,
     //stone: false
 };
-let hearts = [];
-const resourcesTemplate = copyObject(resources);
 //Temp variables
-
-let guild = "";
-let escapeStarted = false;
-let portalUsed = false;
-let stoneLoc = 0;
 
 let curLoadout = 0;
 let loadouts;
 let loadoutnames;
 //let loadoutnames = ["1", "2", "3", "4", "5"];
 const skillList = ["Combat", "Magic", "Practical", "Alchemy", "Crafting", "Dark", "Chronomancy", "Pyromancy", "Restoration", "Spatiomancy", "Mercantilism", "Divine", "Commune", "Wunderkind", "Gluttony", "Thievery", "Leadership"];
-const skills = {};
 const buffList = ["Ritual", "Imbuement", "Imbuement2", "Feast", "Aspirant", "Heroism", "Imbuement3"];
 const dungeonFloors = [6, 9, 20];
-const trialFloors = [50, 100, 7, 1000, 25];
 const buffHardCaps = {
     Ritual: 666,
     Imbuement: 500,
@@ -141,96 +128,19 @@ const buffCaps = {
     Aspirant: 20,
     Heroism: 50
 };
-const buffs = {};
-let goldInvested = 0;
 
 let townShowing = 0;
 
 let actionStoriesShowing = false;
-let townsUnlocked = [];
-let completedActions = [];
 let statShowing;
 let skillShowing;
 let buffShowing;
 let curActionShowing;
 let dungeonShowing;
 let actionTownNum;
-let trainingLimits = 10;
 let storyShowing = 0;
-let storyMax = 0;
-let unreadActionStories;
-const storyReqs = {
-    maxSQuestsInALoop: false,
-    realMaxSQuestsInALoop: false,
-    maxLQuestsInALoop: false,
-    realMaxLQuestsInALoop: false,
-    heal10PatientsInALoop: false,
-    failedHeal: false,
-    clearSDungeon: false,
-    haggle: false,
-    haggle15TimesInALoop: false,
-    haggle16TimesInALoop: false,
-    glassesBought: false,
-    partyThrown: false,
-    partyThrown2: false,
-    strengthTrained: false,
-    suppliesBought: false,
-    suppliesBoughtWithoutHaggling: false,
-    smallDungeonAttempted: false,
-    satByWaterfall: false,
-    dexterityTrained: false,
-    speedTrained: false,
-    birdsWatched: false,
-    darkRitualThirdSegmentReached: false,
-    failedBrewPotions: false,
-    failedBrewPotionsNegativeRep: false,
-    potionBrewed: false,
-    failedGamble: false,
-    failedGambleLowMoney: false,
-    potionSold: false,
-    sell20PotionsInALoop: false,
-    sellPotionFor100Gold: false,
-    advGuildTestsTaken: false,
-    advGuildRankEReached: false,
-    advGuildRankDReached: false,
-    advGuildRankCReached: false,
-    advGuildRankBReached: false,
-    advGuildRankAReached: false,
-    advGuildRankSReached: false,
-    advGuildRankUReached: false,
-    advGuildRankGodlikeReached: false,
-    teammateGathered: false,
-    fullParty: false,
-    failedGatherTeam: false,
-    largeDungeonAttempted: false,
-    clearLDungeon: false,
-    craftGuildTestsTaken: false,
-    craftGuildRankEReached: false,
-    craftGuildRankDReached: false,
-    craftGuildRankCReached: false,
-    craftGuildRankBReached: false,
-    craftGuildRankAReached: false,
-    craftGuildRankSReached: false,
-    craftGuildRankUReached: false,
-    craftGuildRankGodlikeReached: false,
-    armorCrafted: false,
-    craft10Armor: false,
-    failedCraftArmor: false,
-    booksRead: false,
-    pickaxeBought: false,
-    loopingPotionMade: false,
-    slay6TrollsInALoop: false,
-    slay20TrollsInALoop: false,
-    imbueMindThirdSegmentReached: false,
-    judgementFaced: false,
-    acceptedIntoValhalla: false,
-    castIntoShadowRealm: false,
-    fellFromGrace: false,
-    donatedToCharity: false,
-};
 
 const curDate = new Date();
-let totalOfflineMs = 0;
 
 let bonusSpeed = 1;
 const offlineRatio = 1;
@@ -248,18 +158,6 @@ let challengeSave = {
 
 let totalMerchantMana = 7500;
 
-
-let curAdvGuildSegment = 0;
-
-let curCraftGuildSegment = 0;
-
-let curWizCollegeSegment = 0;
-
-let curFightFrostGiantsSegment = 0;
-
-let curFightJungleMonstersSegment = 0;
-
-let curThievesGuildSegment = 0;
 
 const options = {
     theme: "normal",
@@ -299,10 +197,10 @@ function clearSave() {
     location.reload();
 }
 
-function loadDefaults() {
-    initializeStats();
-    initializeSkills();
-    initializeBuffs();
+function loadDefaults(stats, skills, buffs) {
+    initializeStats(stats);
+    initializeSkills(skills);
+    initializeBuffs(buffs);
 }
 
 function loadUISettings() {
@@ -317,11 +215,95 @@ function saveUISettings() {
 }
 
 function load(inChallenge) {
-    loadDefaults();
+    const stats = {};
+    const skills = {};
+    const buffs = {};
+
+    loadDefaults(stats, skills, buffs);
     loadUISettings();
 
     loadouts = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
     loadoutnames = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
+    
+    const towns = [];
+    let goldInvested = 0;
+    let townsUnlocked = [];
+    let completedActions = [];
+    let trainingLimits = 10;
+    let storyMax = 0;
+    let totalOfflineMs = 0;
+    let totalTalent = 0;
+    
+    const storyReqs = {
+        maxSQuestsInALoop: false,
+        realMaxSQuestsInALoop: false,
+        maxLQuestsInALoop: false,
+        realMaxLQuestsInALoop: false,
+        heal10PatientsInALoop: false,
+        failedHeal: false,
+        clearSDungeon: false,
+        haggle: false,
+        haggle15TimesInALoop: false,
+        haggle16TimesInALoop: false,
+        glassesBought: false,
+        partyThrown: false,
+        partyThrown2: false,
+        strengthTrained: false,
+        suppliesBought: false,
+        suppliesBoughtWithoutHaggling: false,
+        smallDungeonAttempted: false,
+        satByWaterfall: false,
+        dexterityTrained: false,
+        speedTrained: false,
+        birdsWatched: false,
+        darkRitualThirdSegmentReached: false,
+        failedBrewPotions: false,
+        failedBrewPotionsNegativeRep: false,
+        potionBrewed: false,
+        failedGamble: false,
+        failedGambleLowMoney: false,
+        potionSold: false,
+        sell20PotionsInALoop: false,
+        sellPotionFor100Gold: false,
+        advGuildTestsTaken: false,
+        advGuildRankEReached: false,
+        advGuildRankDReached: false,
+        advGuildRankCReached: false,
+        advGuildRankBReached: false,
+        advGuildRankAReached: false,
+        advGuildRankSReached: false,
+        advGuildRankUReached: false,
+        advGuildRankGodlikeReached: false,
+        teammateGathered: false,
+        fullParty: false,
+        failedGatherTeam: false,
+        largeDungeonAttempted: false,
+        clearLDungeon: false,
+        craftGuildTestsTaken: false,
+        craftGuildRankEReached: false,
+        craftGuildRankDReached: false,
+        craftGuildRankCReached: false,
+        craftGuildRankBReached: false,
+        craftGuildRankAReached: false,
+        craftGuildRankSReached: false,
+        craftGuildRankUReached: false,
+        craftGuildRankGodlikeReached: false,
+        armorCrafted: false,
+        craft10Armor: false,
+        failedCraftArmor: false,
+        booksRead: false,
+        pickaxeBought: false,
+        loopingPotionMade: false,
+        slay6TrollsInALoop: false,
+        slay20TrollsInALoop: false,
+        imbueMindThirdSegmentReached: false,
+        judgementFaced: false,
+        acceptedIntoValhalla: false,
+        castIntoShadowRealm: false,
+        fellFromGrace: false,
+        donatedToCharity: false,
+    };
+    let unreadActionStories = [];
     // loadoutnames[-1] is what displays in the loadout renaming box when no loadout is selected
     // It isn't technically part of the array, just a property on it, so it doesn't count towards loadoutnames.length
     loadoutnames[-1] = "";
@@ -416,14 +398,14 @@ function load(inChallenge) {
         toLoad.completedActions.forEach(action => {
             completedActions.push(action);
         });
-    completedActions.push("FoundGlasses");
+        
     for (let i = 0; i <= 8; i++) {
         towns[i] = new Town(i);
     }
     actionTownNum = toLoad.actionTownNum === undefined ? 0 : toLoad.actionTownNum;
-    trainingLimits = 10 + getBuffLevel("Imbuement");
+    player.buffs = buffs;
+    trainingLimits = 10 + getBuffLevel("Imbuement", player);
     goldInvested = toLoad.goldInvested === undefined ? 0 : toLoad.goldInvested;
-    stonesUsed = toLoad.stonesUsed === undefined ? {1:0, 3:0, 5:0, 6:0} : toLoad.stonesUsed;
 
     actions.next = [];
     if (toLoad.nextList) {
@@ -500,7 +482,7 @@ function load(inChallenge) {
             toLoad.dungeons.push([]);
         }
     }*/
-    dungeons = [[], [], []];
+    let dungeons = [[], [], []];
     const level = { ssChance: 1, completed: 0 };
     let floors = 0;
     if(toLoad.dungeons === undefined) toLoad.dungeons = copyArray(dungeons);
@@ -513,22 +495,6 @@ function load(inChallenge) {
                 dungeons[i][j] = copyArray(level);
             }
             dungeons[i][j].lastStat = "NA";
-        }
-    }
-
-    trials = [[], [], [], [], []];
-    const trialLevel = {completed: 0};
-    if(toLoad.trials === undefined) toLoad.trials = copyArray(trials);
-    for (let i = 0; i < trials.length; i++) {
-        floors = trialFloors[i];
-        trials[i].highestFloor = 0;
-        for (let j = 0; j < floors; j++) {
-            if (toLoad.trials[i] != undefined && toLoad.trials && toLoad.trials[i][j]) {
-                trials[i][j] = toLoad.trials[i][j];
-                if (trials[i][j].completed > 0) trials[i].highestFloor = j;
-            } else {
-                trials[i][j] = copyArray(trialLevel);
-            }
         }
     }
 
@@ -566,10 +532,13 @@ function load(inChallenge) {
         }
     }
 
+    
+    player.create(stats, buffs, towns, skills, totalTalent, trainingLimits, townsUnlocked,
+        completedActions, dungeons, goldInvested, storyMax, unreadActionStories, totalOfflineMs, storyReqs);
     loadChallenge();
     view.initalize();
 
-    for (const town of towns) {
+    for (const town of player.towns) {
         for (const action of town.totalActionList) {
             if (action.type === "limited") {
                 const varName = action.varName;
@@ -584,17 +553,18 @@ function load(inChallenge) {
     for (const option in options) {
         loadOption(option, options[option]);
     }
+
     storyShowing = toLoad.storyShowing === undefined ? 0 : toLoad.storyShowing;
-    storyMax = toLoad.storyMax === undefined ? 0 : toLoad.storyMax;
-    if (toLoad.unreadActionStories === undefined) unreadActionStories = [];
+    player.storyMax = toLoad.storyMax === undefined ? 0 : toLoad.storyMax;
+    if (toLoad.unreadActionStories === undefined) player.unreadActionStories = [];
     else {
-        unreadActionStories = toLoad.unreadActionStories;
+        player.unreadActionStories = toLoad.unreadActionStories;
         //for (const name of unreadActionStories) {
         //    showNotification(name);
         //}
     }
 
-    totalOfflineMs = toLoad.totalOfflineMs === undefined ? 0 : toLoad.totalOfflineMs;
+    player.totalOfflineMs = toLoad.totalOfflineMs === undefined ? 0 : toLoad.totalOfflineMs;
     if (toLoad.totals != undefined) {
         totals.time = toLoad.totals.time === undefined ? 0 : toLoad.totals.time;
         totals.effectiveTime = toLoad.totals.effectiveTime === undefined ? 0 : toLoad.totals.effectiveTime;
@@ -608,30 +578,19 @@ function load(inChallenge) {
     addOffline(Math.min(Math.floor((new Date() - new Date(toLoad.date)) * offlineRatio), 2678400000));
 
     if (toLoad.version75 === undefined) {
-        const total = towns[0].totalSDungeon;
-        dungeons[0][0].completed = Math.floor(total / 2);
-        dungeons[0][1].completed = Math.floor(total / 4);
-        dungeons[0][2].completed = Math.floor(total / 8);
-        dungeons[0][3].completed = Math.floor(total / 16);
-        dungeons[0][4].completed = Math.floor(total / 32);
-        dungeons[0][5].completed = Math.floor(total / 64);
-        towns[0].totalSDungeon = dungeons[0][0].completed + dungeons[0][1].completed + dungeons[0][2].completed + dungeons[0][3].completed + dungeons[0][4].completed + dungeons[0][5].completed;
-    }
-
-    //Handle players on previous challenge system
-    if(toLoad.challenge !== undefined && toLoad.challenge !== 0) {
-        challengeSave.challengeMode = 0;
-        challengeSave.inChallenge = true;
-        save();
-
-        challengeSave.challengeMode = toLoad.challenge;
-        saveName = challengeSaveName;
-        save();
-        location.reload();
+        const total = player.towns[0].totalSDungeon;
+        player.dungeons[0][0].completed = Math.floor(total / 2);
+        player.dungeons[0][0].completed = Math.floor(total / 2);
+        player.dungeons[0][1].completed = Math.floor(total / 4);
+        player.dungeons[0][2].completed = Math.floor(total / 8);
+        player.dungeons[0][3].completed = Math.floor(total / 16);
+        player.dungeons[0][4].completed = Math.floor(total / 32);
+        player.dungeons[0][5].completed = Math.floor(total / 64);
+        player.towns[0].totalSDungeon = player.dungeons[0][0].completed + player.dungeons[0][1].completed + player.dungeons[0][2].completed + player.dungeons[0][3].completed + player.dungeons[0][4].completed + player.dungeons[0][5].completed;
     }
 
 
-    adjustAll();
+    adjustAll(player);
 
     view.updateLoadoutNames();
     view.changeStatView();
@@ -647,21 +606,19 @@ function load(inChallenge) {
 function save() {
     const toSave = {};
     toSave.curLoadout = curLoadout;
-    toSave.dungeons = dungeons;
-    toSave.trials = trials;
-    toSave.townsUnlocked = townsUnlocked;
-    toSave.completedActions = completedActions;
+    toSave.dungeons = player.dungeons;
+    toSave.townsUnlocked = player.townsUnlocked;
+    toSave.completedActions = player.completedActions;
     toSave.actionTownNum = actionTownNum;
 
-    toSave.stats = stats;
-    toSave.totalTalent = totalTalent;
-    toSave.skills = skills;
-    toSave.buffs = buffs;
-    toSave.goldInvested = goldInvested;
-    toSave.stonesUsed = stonesUsed;
+    toSave.stats = player.stats;
+    toSave.totalTalent = player.totalTalent;
+    toSave.skills = player.skills;
+    toSave.buffs = player.buffs;
+    toSave.goldInvested = player.goldInvested;
     toSave.version75 = true;
 
-    for (const town of towns) {
+    for (const town of player.towns) {
         for (const action of town.totalActionList) {
             if (action.type === "progress") {
                 toSave[`exp${action.varName}`] = town[`exp${action.varName}`];
@@ -684,13 +641,13 @@ function save() {
     toSave.loadoutnames = loadoutnames;
     toSave.options = options;
     toSave.storyShowing = storyShowing;
-    toSave.storyMax = storyMax;
-    toSave.storyReqs = storyReqs;
-    toSave.unreadActionStories = unreadActionStories;
+    toSave.storyMax = player.storyMax;
+    toSave.storyReqs = player.storyReqs;
+    toSave.unreadActionStories = player.unreadActionStories;
     toSave.buffCaps = buffCaps;
 
     toSave.date = new Date();
-    toSave.totalOfflineMs = totalOfflineMs;
+    toSave.totalOfflineMs = player.totalOfflineMs;
     toSave.totals = totals;
     
     toSave.challengeSave = challengeSave;

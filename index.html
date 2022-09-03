@@ -378,12 +378,12 @@
 
     <div id="townColumn" style="width:535px;vertical-align:top;">
         <div id="townWindow" style="width:100%;text-align:center;height:34px">
-            <div style="float:left;margin-left:150px;" class="actionIcon fa fa-arrow-left" id="townViewLeft" onclick="view.showTown(townsUnlocked[townsUnlocked.indexOf(townShowing)-1])"></div>
+            <div style="float:left;margin-left:150px;" class="actionIcon fa fa-arrow-left" id="townViewLeft" onclick="view.showTown(player.townsUnlocked[player.townsUnlocked.indexOf(townShowing)-1])"></div>
             <div class="showthat">
                 <div class="large bold"><select class="bold" style="text-align:center" id="TownSelect"></select></div>
                 <div id='townDesc' class='showthis'></div>
             </div>
-            <div style="float:right;margin-right:150px;" class="actionIcon fa fa-arrow-right" id="townViewRight" onclick="view.showTown(townsUnlocked[townsUnlocked.indexOf(townShowing)+1])"></div>
+            <div style="float:right;margin-right:150px;" class="actionIcon fa fa-arrow-right" id="townViewRight" onclick="view.showTown(player.townsUnlocked[player.townsUnlocked.indexOf(townShowing)+1])"></div>
         </div><br>
         <div id="townInfo0" class='townInfo'></div>
         <div id="townInfo1" class='townInfo' style="display:none;"></div>
@@ -434,6 +434,7 @@
     <script src="localization.js"></script>
     <script src="interval.js"></script>
     <script src="driver.js"></script>
+    <script src="player.js"></script>
     <script src="stats.js"></script>
     <script src="statsgraph.js"></script>
     <script src="actions.js"></script>
@@ -450,8 +451,6 @@
     <script src="views/buffs.view.js"></script>
     <script>
         let totalActionList = [];
-        let dungeons = [[], [], []];
-        let trials = [[], [], [], [], []];
         let initInterval = setInterval(() => {
             if (locCheck) {
                 clearInterval(initInterval);

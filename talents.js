@@ -3,7 +3,7 @@ const ctx = canvas.getContext("2d");
 
 const talents = {
     spent: 0,
-    totalPoints() { return getTotalTalentLevel(); },
+    totalPoints() { return getTotalTalentLevel(player); },
     spendablePoints() { return this.totalPoints() - playerTalents.spentPoints; },
     1: {
         name() { return _txt("talents>calculated_shattering>name"); },

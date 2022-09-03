@@ -79,7 +79,7 @@ class View {
         this.updateTeamCombat();
         this.updateLoadoutNames();
         this.updateResources();
-        if (storyMax >= 12)
+        if (player.storyMax >= 12)
             setInterval(() => {
                 view.updateStories();
                 view.updateLockedHidden();
@@ -89,7 +89,7 @@ class View {
                 view.updateStories();
                 view.updateLockedHidden();
             }, 2000);
-        adjustAll();
+        adjustAll(player);
     };
 
     createStats() {
@@ -191,10 +191,10 @@ class View {
     };
 
     updateStat(stat) {
-        const level = getLevel(stat);
-        const talent = getTalent(stat);
-        const levelPrc = `${getPrcToNextLevel(stat)}%`;
-        const talentPrc = `${getPrcToNextTalent(stat)}%`;
+        const level = getLevel(stat, player);
+        const talent = getTalent(stat, player);
+        const levelPrc = `${getPrcToNextLevel(stat, player)}%`;
+        const talentPrc = `${getPrcToNextTalent(stat, player)}%`;
         document.getElementById(`stat${stat}LevelBar`).style.width = levelPrc;
         document.getElementById(`stat${stat}TalentBar`).style.width = talentPrc;
         document.getElementById(`stat${stat}Level`).textContent = intToString(level, 1);
@@ -203,17 +203,17 @@ class View {
         if (statShowing === stat || document.getElementById(`stat${stat}LevelExp`).innerHTML === "") {
             document.getElementById(`stat${stat}Level2`).textContent = intToString(level, 1);
             const expOfLevel = getExpOfLevel(level);
-            document.getElementById(`stat${stat}LevelExp`).textContent = intToString(stats[stat].exp - expOfLevel, 1);
+            document.getElementById(`stat${stat}LevelExp`).textContent = intToString(player.stats[stat].exp - expOfLevel, 1);
             document.getElementById(`stat${stat}LevelExpNeeded`).textContent = intToString(`${getExpOfLevel(level + 1) - expOfLevel}`, 1);
             document.getElementById(`stat${stat}LevelProgress`).textContent = intToString(levelPrc, 2);
 
             document.getElementById(`stat${stat}Talent2`).textContent = intToString(talent, 1);
             const expOfTalent = getExpOfTalent(talent);
-            document.getElementById(`stat${stat}TalentExp`).textContent = intToString(stats[stat].talent - expOfTalent, 1);
+            document.getElementById(`stat${stat}TalentExp`).textContent = intToString(player.stats[stat].talent - expOfTalent, 1);
             document.getElementById(`stat${stat}TalentExpNeeded`).textContent = intToString(`${getExpOfTalent(talent + 1) - expOfTalent}`, 1);
             document.getElementById(`stat${stat}TalentMult`).textContent = intToString(calcTalentMult(talent), 3);
             document.getElementById(`stat${stat}TalentProgress`).textContent = intToString(talentPrc, 2);
-            document.getElementById(`stat${stat}TotalMult`).textContent = intToString(getTotalBonusXP(stat), 3);
+            document.getElementById(`stat${stat}TotalMult`).textContent = intToString(getTotalBonusXP(stat, player), 3);
         }
     };
 
@@ -229,7 +229,7 @@ class View {
     };
 
     updateSkill(skill) {
-        if (skills[skill].exp === 0) {
+        if (player.skills[skill].exp === 0) {
             document.getElementById(`skill${skill}Container`).style.display = "none";
             return;
         }
@@ -239,38 +239,39 @@ class View {
             this.updateTeamCombat();
         }
 
-        const levelPrc = getPrcToNextSkillLevel(skill);
-        document.getElementById(`skill${skill}Level`).textContent = (getSkillLevel(skill) > 9999) ? toSuffix(getSkillLevel(skill)) : formatNumber(getSkillLevel(skill));
+        const levelPrc = getPrcToNextSkillLevel(skill, player);
+        const skillLevel = getSkillLevel(skill, player);
+        document.getElementById(`skill${skill}Level`).textContent = (skillLevel > 9999) ? toSuffix(skillLevel) : formatNumber(skillLevel);
         document.getElementById(`skill${skill}LevelBar`).style.width = `${levelPrc}%`;
 
         if (skillShowing === skill) {
-            const expOfLevel = getExpOfSkillLevel(getSkillLevel(skill));
-            document.getElementById(`skill${skill}LevelExp`).textContent = intToString(skills[skill].exp - expOfLevel, 1);
-            document.getElementById(`skill${skill}LevelExpNeeded`).textContent = intToString(`${getExpOfSkillLevel(getSkillLevel(skill) + 1) - expOfLevel}`, 1);
+            const expOfLevel = getExpOfSkillLevel(skillLevel);
+            document.getElementById(`skill${skill}LevelExp`).textContent = intToString(player.skills[skill].exp - expOfLevel, 1);
+            document.getElementById(`skill${skill}LevelExpNeeded`).textContent = intToString(`${getExpOfSkillLevel(skillLevel + 1) - expOfLevel}`, 1);
             document.getElementById(`skill${skill}LevelProgress`).textContent = intToString(levelPrc, 2);
-
+            
             if (skill === "Dark") {
-                document.getElementById("skillBonusDark").textContent = intToString(getSkillBonus("Dark"), 4);
+                document.getElementById("skillBonusDark").textContent = intToString(getSkillBonus(skill, player), 4);
             } else if (skill === "Chronomancy") {
-                document.getElementById("skillBonusChronomancy").textContent = intToString(getSkillBonus("Chronomancy"), 4);
+                document.getElementById("skillBonusChronomancy").textContent = intToString(getSkillBonus(skill, player), 4);
             } else if (skill === "Practical") {
-                document.getElementById("skillBonusPractical").textContent = getSkillBonus("Practical").toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
+                document.getElementById("skillBonusPractical").textContent = getSkillBonus(skill, player).toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
             } else if (skill === "Mercantilism") {
-                document.getElementById("skillBonusMercantilism").textContent = intToString(getSkillBonus("Mercantilism"), 4);
+                document.getElementById("skillBonusMercantilism").textContent = intToString(getSkillBonus(skill, player), 4);
             } else if (skill === "Spatiomancy") {
-                document.getElementById("skillBonusSpatiomancy").textContent = getSkillBonus("Spatiomancy").toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
+                document.getElementById("skillBonusSpatiomancy").textContent = getSkillBonus(skill, player).toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
             } else if (skill === "Divine") {
-                document.getElementById("skillBonusDivine").textContent = intToString(getSkillBonus("Divine"), 4);
+                document.getElementById("skillBonusDivine").textContent = intToString(getSkillBonus(skill, player), 4);
             } else if (skill === "Commune") {
-                document.getElementById("skillBonusCommune").textContent = getSkillBonus("Commune").toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
+                document.getElementById("skillBonusCommune").textContent = getSkillBonus(skill, player).toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
             } else if (skill === "Wunderkind") {
-                document.getElementById("skillBonusWunderkind").textContent = intToString(getSkillBonus("Wunderkind"), 4);
+                document.getElementById("skillBonusWunderkind").textContent = intToString(getSkillBonus(skill, player), 4);
             }else if (skill === "Gluttony") {
-                document.getElementById("skillBonusGluttony").textContent = getSkillBonus("Gluttony").toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
+                document.getElementById("skillBonusGluttony").textContent = getSkillBonus(skill, player).toFixed(3).replace(/(\.\d*?[1-9])0+$/gu, "$1");
             } else if (skill === "Thievery") {
-                document.getElementById("skillBonusThievery").textContent = intToString(getSkillBonus("Thievery"), 4);
+                document.getElementById("skillBonusThievery").textContent = intToString(getSkillBonus(skill, player), 4);
             } else if (skill === "Leadership") {
-                document.getElementById("skillBonusLeadership").textContent = intToString(getSkillBonus("Leadership"), 4);
+                document.getElementById("skillBonusLeadership").textContent = intToString(getSkillBonus(skill, player), 4);
             }
         }
         this.adjustTooltipPosition(container.querySelector("div.showthis"));
@@ -288,13 +289,13 @@ class View {
     };
 
     updateBuff(buff) {
-        if (buffs[buff].amt === 0) {
+        if (player.buffs[buff].amt === 0) {
             document.getElementById(`buff${buff}Container`).style.display = "none";
             return;
         }
         let container = document.getElementById(`buff${buff}Container`);
         container.style.display = "flex";
-        document.getElementById(`buff${buff}Level`).textContent = `${getBuffLevel(buff)}/`;
+        document.getElementById(`buff${buff}Level`).textContent = `${getBuffLevel(buff, player)}/`;
         if (buff === "Imbuement") {
             this.updateTrainingLimits();
         }
@@ -308,33 +309,33 @@ class View {
     };
 
     updateTime() {
-        document.getElementById("timeBar").style.width = `${100 - timer / timeNeeded * 100}%`;
-        document.getElementById("timer").textContent = `${intToString((timeNeeded - timer), 1)} | ${formatTime((timeNeeded - timer) / 50 / getActualGameSpeed())}`;
+        document.getElementById("timeBar").style.width = `${100 - timer / player.timeNeeded * 100}%`;
+        document.getElementById("timer").textContent = `${intToString((player.timeNeeded - timer), 1)} | ${formatTime((player.timeNeeded - timer) / 50 / getActualGameSpeed(player.curTown, player))}`;
     };
     updateOffline() {
-        document.getElementById("bonusSeconds").textContent = formatTime(totalOfflineMs / 1000);
+        document.getElementById("bonusSeconds").textContent = formatTime(player.totalOfflineMs / 1000);
     }
     updateTotalTicks() {
         document.getElementById("totalTicks").textContent = `${formatNumber(actions.completedTicks)} | ${formatTime(timeCounter)}`;
         document.getElementById("effectiveTime").textContent = `${formatTime(effectiveTime)}`;
     };
     updateResource(resource) {
-        if (resource !== "gold") document.getElementById(`${resource}Div`).style.display = resources[resource] ? "inline-block" : "none";
+        if (resource !== "gold") document.getElementById(`${resource}Div`).style.display = player.resources[resource] ? "inline-block" : "none";
 
-        if (resource === "supplies") document.getElementById("suppliesCost").textContent = towns[0].suppliesCost;
-        if (resource === "teamMembers") document.getElementById("teamCost").textContent = (resources.teamMembers + 1) * 100;
+        if (resource === "supplies") document.getElementById("suppliesCost").textContent = player.towns[0].suppliesCost;
+        if (resource === "teamMembers") document.getElementById("teamCost").textContent = (player.resources.teamMembers + 1) * 100;
 
-        if (Number.isFinite(resources[resource])) document.getElementById(resource).textContent = resources[resource];
+        if (Number.isFinite(player.resources[resource])) document.getElementById(resource).textContent = player.resources[resource];
     };
     updateResources() {
-        for (const resource in resources) this.updateResource(resource);
+        for (const resource in player.resources) this.updateResource(resource);
     };
     updateTeamCombat() {
-        if (towns[2].unlocked) {
+        if (player.towns[2].unlocked) {
             document.getElementById("skillSCombatContainer").style.display = "inline-block";
             document.getElementById("skillTCombatContainer").style.display = "inline-block";
-            document.getElementById("skillSCombatLevel").textContent = intToString(getSelfCombat(), 1);
-            document.getElementById("skillTCombatLevel").textContent = intToString(getTeamCombat(), 1);
+            document.getElementById("skillSCombatLevel").textContent = intToString(getSelfCombat(player), 1);
+            document.getElementById("skillTCombatLevel").textContent = intToString(getTeamCombat(player), 1);
         } else {
             document.getElementById("skillSCombatContainer").style.display = "none";
             document.getElementById("skillTCombatContainer").style.display = "none";
@@ -408,12 +409,14 @@ class View {
                 capButton = `<i id='capButton${i}' onclick='capAmount(${i}, ${townNum})' class='actionIcon far fa-circle'></i>`;
             } else if (isTraining(action.name)) {
                 capButton = `<i id='capButton${i}' onclick='capTraining(${i})' class='actionIcon far fa-circle'></i>`;
+            } else if (action.name === "Haggle") {
+                capButton = `<i id='capButton${i}' onclick='capAmount(${i})' class='actionIcon far fa-circle'></i>`;
             }
             let isSingular;
             if (translatedAction.allowed === undefined) {
                 isSingular = false;
             } else {
-                isSingular = translatedAction.allowed() === 1;
+                isSingular = translatedAction.allowed(player) === 1;
             }
             const actionLoops = action.loops > 99999 ? toSuffix(action.loops) : formatNumber(action.loops);
             const opacity = action.disabled || action.loops === 0 ? "opacity: 0.5" : "";
@@ -542,7 +545,7 @@ class View {
 
         // only update tooltip if it's open
         if (curActionShowing === index) {
-            document.getElementById(`action${index}ManaOrig`).textContent = formatNumber(action.manaCost() * action.loops);
+            document.getElementById(`action${index}ManaOrig`).textContent = formatNumber(action.manaCost(player) * action.loops);
             document.getElementById(`action${index}ManaUsed`).textContent = formatNumber(action.manaUsed);
             document.getElementById(`action${index}LastMana`).textContent = intToString(action.lastMana, 3);
             document.getElementById(`action${index}Remaining`).textContent = formatNumber(action.manaRemaining);
@@ -597,7 +600,7 @@ class View {
     };
 
     updateProgressActions() {
-        for (const town of towns) {
+        for (const town of player.towns) {
             for (let i = 0; i < town.progressVars.length; i++) {
                 const varName = town.progressVars[i];
                 this.updateProgressAction({name: varName, town: town});
@@ -610,7 +613,7 @@ class View {
             const actionDiv = document.getElementById(`container${action.varName}`);
             const infoDiv = document.getElementById(`infoContainer${action.varName}`);
             const storyDiv = document.getElementById(`storyContainer${action.varName}`);
-            if (action.allowed && getNumOnList(action.name) >= action.allowed()) {
+            if (action.allowed && actions.getNumOnList(action.name) >= action.allowed(player)) {
                 addClassToDiv(actionDiv, "capped");
             } else if (action.unlocked()) {
                 if (infoDiv) {
@@ -685,7 +688,7 @@ class View {
                         document.getElementById(divName).children[2].innerHTML = storyTooltipText;
                         if (!init) {
                             showNotification(divName);
-                            if (!unreadActionStories.includes(name)) unreadActionStories.push(name);
+                            if (!player.unreadActionStories.includes(name)) player.unreadActionStories.push(name);
                         }
                         if (storiesUnlocked === storyAmt) {
                             document.getElementById(divName).classList.add("storyContainerCompleted");
@@ -699,7 +702,7 @@ class View {
     };
 
     showTown(townNum) {
-        if (!towns[townNum].unlocked()) return;
+        if (!player.towns[townNum].unlocked(player)) return;
 
         if (townNum === 0) {
             document.getElementById("townViewLeft").style.visibility = "hidden";
@@ -707,7 +710,7 @@ class View {
             document.getElementById("townViewLeft").style.visibility = "visible";
         }
 
-        if (townNum === Math.max(...townsUnlocked)) {
+        if (townNum === Math.max(...player.townsUnlocked)) {
             document.getElementById("townViewRight").style.visibility = "hidden";
         } else {
             document.getElementById("townViewRight").style.visibility = "visible";
@@ -749,7 +752,7 @@ class View {
     updateRegular(updateInfo) {
         const varName = updateInfo.name;
         const index = updateInfo.index;
-        const town = towns[index];
+        const town = player.towns[index];
         document.getElementById(`total${varName}`).textContent = town[`total${varName}`];
         document.getElementById(`checked${varName}`).textContent = town[`checked${varName}`];
         document.getElementById(`unchecked${varName}`).textContent = town[`total${varName}`] - town[`checked${varName}`];
@@ -874,7 +877,7 @@ class View {
                     <br>
                     ${actionSkills}
                     ${actionStats}
-                    <div class='bold'>${_txt("actions>tooltip>mana_cost")}:</div> <div id='manaCost${action.varName}'>${formatNumber(action.manaCost())}</div><br>
+                    <div class='bold'>${_txt("actions>tooltip>mana_cost")}:</div> <div id='manaCost${action.varName}'>${formatNumber(action.manaCost(player))}</div><br>
                     <div class='bold'>${_txt("actions>tooltip>exp_multiplier")}:</div><div id='expMult${action.varName}'>${action.expMult * 100}</div>%<br>
                 </div>
             </div>`;
@@ -930,7 +933,7 @@ class View {
     adjustManaCost(actionName) {
         console.log(actionName)
         const action = translateClassNames(actionName);
-        document.getElementById(`manaCost${action.varName}`).textContent = formatNumber(action.manaCost());
+        document.getElementById(`manaCost${action.varName}`).textContent = formatNumber(action.manaCost(player));
     };
 
     adjustExpMult(actionName) {
@@ -945,13 +948,13 @@ class View {
     };
     adjustGoldCosts() {
         for (const action of actionsWithGoldCost) {
-            this.adjustGoldCost({varName: action.varName, cost: action.goldCost()});
+            this.adjustGoldCost({varName: action.varName, cost: action.goldCost(player)});
         }
     };
     adjustExpGain(action) {
         for (const skill in action.skills) {
             if (Number.isInteger(action.skills[skill])) document.getElementById(`expGain${action.varName}${skill}`).textContent = ` ${action.skills[skill].toFixed(0)}`;
-            else document.getElementById(`expGain${action.varName}${skill}`).textContent = ` ${action.skills[skill]().toFixed(0)}`;
+            else document.getElementById(`expGain${action.varName}${skill}`).textContent = ` ${action.skills[skill](player).toFixed(0)}`;
         }
     };
     adjustExpGains() {
@@ -1029,9 +1032,9 @@ class View {
     
     updateMultiPartSegments(action) {
         let segment = 0;
-        let curProgress = towns[action.townNum][action.varName];
+        let curProgress = player.towns[action.townNum][action.varName];
         // update previous segments
-        let loopCost = action.loopCost(segment);
+        let loopCost = action.loopCost(segment,player);
         while (curProgress >= loopCost && segment < action.segments) {
             document.getElementById(`expBar${segment}${action.varName}`).style.width = "0px";
             const roundedLoopCost = intToStringRound(loopCost);
@@ -1042,7 +1045,7 @@ class View {
 
             curProgress -= loopCost;
             segment++;
-            loopCost = action.loopCost(segment);
+            loopCost = action.loopCost(segment, player);
         }
 
         // update current segments
@@ -1058,7 +1061,7 @@ class View {
             if (document.getElementById(`progress${i}${action.varName}`).textContent !== "0") {
                 document.getElementById(`progress${i}${action.varName}`).textContent = "0";
             }
-            document.getElementById(`progressNeeded${i}${action.varName}`).textContent = intToStringRound(action.loopCost(i));
+            document.getElementById(`progressNeeded${i}${action.varName}`).textContent = intToStringRound(action.loopCost(i,player));
         }
     };
 
@@ -1068,7 +1071,7 @@ class View {
     };
 
     updateSoulstoneChance(index) {
-        const dungeon = dungeons[index];
+        const dungeon = player.dungeons[index];
         for (let i = 0; i < dungeon.length; i++) {
             const level = dungeon[i];
             document.getElementById(`soulstoneChance${index}_${i}`).textContent = intToString(level.ssChance * 100, 4);
@@ -1079,11 +1082,11 @@ class View {
 
     updateSoulstones() {
         for (const stat of statList) {
-            if (stats[stat].soulstone) {
+            if (player.stats[stat].soulstone) {
                 document.getElementById(`ss${stat}Container`).style.display = "inline-block";
-                document.getElementById(`ss${stat}`).textContent = intToString(stats[stat].soulstone, 1);
-                document.getElementById(`stat${stat}SSBonus`).textContent = intToString(stats[stat].soulstone ? calcSoulstoneMult(stats[stat].soulstone) : 0);
-                document.getElementById(`stat${stat}ss`).textContent = intToString(stats[stat].soulstone, 1);
+                document.getElementById(`ss${stat}`).textContent = intToString(player.stats[stat].soulstone, 1);
+                document.getElementById(`stat${stat}SSBonus`).textContent = intToString(player.stats[stat].soulstone ? calcSoulstoneMult(player.stats[stat].soulstone) : 0);
+                document.getElementById(`stat${stat}ss`).textContent = intToString(player.stats[stat].soulstone, 1);
             } else {
                 document.getElementById(`ss${stat}Container`).style.display = "none";
                 document.getElementById(`stat${stat}ss`).textContent = "";
@@ -1092,7 +1095,7 @@ class View {
     };
 
     updateMultiPart(action) {
-        const town = towns[action.townNum];
+        const town = player.towns[action.townNum];
         document.getElementById(`multiPartName${action.varName}`).textContent = action.getPartName();
         document.getElementById(`completed${action.varName}`).textContent = ` ${formatNumber(town[`total${action.varName}`])}`;
         for (let i = 0; i < action.segments; i++) {
@@ -1111,10 +1114,10 @@ class View {
         for (let i = 0; i < statList.length; i++) {
             const trainingDiv = document.getElementById(`trainingLimit${statList[i]}`);
             if (trainingDiv) {
-                trainingDiv.textContent = trainingLimits;
+                trainingDiv.textContent = player.trainingLimits;
             }
         }
-        if (getBuffLevel("Imbuement") > 0 || getBuffLevel("Imbuement3") > 0) document.getElementById("maxTraining").style.display = "";
+        if (getBuffLevel("Imbuement", player) > 0 || getBuffLevel("Imbuement3", player) > 0) document.getElementById("maxTraining").style.display = "";
     };
 
     // when you mouseover Story
@@ -1127,8 +1130,8 @@ class View {
             document.getElementById("storyLeft").style.visibility = "visible";
         }
 
-        if (num >= storyMax) {
-            num = storyMax;
+        if (num >= player.storyMax) {
+            num = player.storyMax;
             document.getElementById("storyRight").style.visibility = "hidden";
         } else {
             document.getElementById("storyRight").style.visibility = "visible";
@@ -1190,24 +1193,24 @@ class View {
     updateTravelMenu() {
         let travelOptions = $("#TownSelect").children();
         for (let i=0;i<travelOptions.length;i++) {
-            travelOptions[i].hidden=(!townsUnlocked.includes(i));
+            travelOptions[i].hidden=(!player.townsUnlocked.includes(i));
         }
     }
 
     adjustDarkRitualText() {
         let DRdesc = document.getElementById("DRText");
         DRdesc.innerHTML = `Actions are:<br>`;
-        townsUnlocked.forEach(townNum => {
+        player.townsUnlocked.forEach(townNum => {
             DRdesc.innerHTML += DarkRitualDescription[townNum];
         });
-        if(getBuffLevel("Ritual") > 200) DRdesc.innerHTML += DarkRitualDescription[9];
+        if(getBuffLevel("Ritual", player) > 200) DRdesc.innerHTML += DarkRitualDescription[9];
     }
 
     highlightIncompleteActions() {
         let actionDivs = Array.from(document.getElementsByClassName("actionContainer"));
         actionDivs.forEach(div => {
             let actionName = div.id.replace("container","");
-            if (!completedActions.includes(actionName))
+            if (!player.completedActions.includes(actionName))
                 div.classList.add("actionHighlight");
         });
     }
@@ -1227,15 +1230,15 @@ class View {
     }
 }
 
-function unlockGlobalStory(num) {
-    if (num > storyMax) {
+function unlockGlobalStory(num, player) {
+    if (num > player.storyMax) {
         document.getElementById("newStory").style.display = "inline-block";
-        storyMax = num;
+        player.storyMax = num;
     }
 }
 
-function unlockStory(name) {
-    if (!storyReqs[name]) storyReqs[name] = true;
+function unlockStory(name, player) {
+    if (!player.storyReqs[name]) player.storyReqs[name] = true;
 }
 
 const curActionsDiv = document.getElementById("curActionsList");

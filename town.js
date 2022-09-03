@@ -21,8 +21,8 @@ class Town {
         }
     }
 
-    unlocked() {
-        return townsUnlocked.includes(this.index);
+    unlocked(player) {
+        return player.townsUnlocked.includes(this.index);
     };
 
     expFromLevel(level) {
@@ -33,18 +33,18 @@ class Town {
         return Math.floor((Math.sqrt(8 * this[`exp${varName}`] / 100 + 1) - 1) / 2);
     };
 
-    restart() {
+    restart(state) {
         for (let i = 0; i < this.varNames.length; i++) {
             const varName = this.varNames[i];
             this[`goodTemp${varName}`] = this[`good${varName}`];
             this[`lootFrom${varName}`] = 0;
-            view.requestUpdate("updateRegular",{name: varName, index: this.index});
+            if (state === player) view.requestUpdate("updateRegular",{name: varName, index: this.index});
         }
     };
 
-    finishProgress(varName, expGain) {
+    finishProgress(varName, expGain, state) {
         // return if capped, for performance
-        if (this[`exp${varName}`] === 505000) {
+        if (this[`exp${varName}`] === 505000 && (state === player) ) {
             if (options.pauseOnComplete) pauseGame();
             else return;
         }
@@ -56,16 +56,16 @@ class Town {
             this[`exp${varName}`] += expGain;
         }
         const level = this.getLevel(varName);
-        if (level !== prevLevel) {
+        if (level !== prevLevel && (state === player) ) {
             view.requestUpdate("updateLockedHidden", null);
-            adjustAll();
+            adjustAll(state);
             for (const action of totalActionList) {
-                if (towns[action.townNum].varNames.indexOf(action.varName) !== -1) {
+                if (state.towns[action.townNum].varNames.indexOf(action.varName) !== -1) {
                     view.requestUpdate("updateRegular", {name: action.varName, index: action.townNum});
                 }
             }
         }
-        view.requestUpdate("updateProgressAction", {name: varName, town: towns[curTown]});
+        if (state === player) view.requestUpdate("updateProgressAction", {name: varName, town: player.towns[player.curTown]});
     };
 
     getPrcToNext(varName) {
@@ -77,7 +77,7 @@ class Town {
     };
 
     // finishes actions that have checkable aspects
-    finishRegular(varName, rewardRatio, rewardFunc) {
+    finishRegular(varName, rewardRatio, rewardFunc, state) {
         // error state, negative numbers.
         if (this[`total${varName}`] - this[`checked${varName}`] < 0) {
             this[`checked${varName}`] = this[`total${varName}`];
@@ -100,7 +100,7 @@ class Town {
             this[`goodTemp${varName}`]--;
             this[`lootFrom${varName}`] += rewardFunc();
         }
-        view.requestUpdate("updateRegular", {name: varName, index: this.index});
+        if (state === player) view.requestUpdate("updateRegular", {name: varName, index: this.index});
     };
 
     createVars(varName) {

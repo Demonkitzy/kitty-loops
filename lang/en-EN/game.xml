@@ -1246,16 +1246,7 @@
             That's not fair. There was time now. There was all the time I needed.<br>Now you have to get new glasses again for 10 gold!<br>Causes Wander to be 4x as effective for the rest of the loop.<br>Affects any action with the glasses icon<br>Can only have 1 Buy Glasses action.<br>Unlocked at 20% explored.
         ]]></tooltip>
             <story_1><![CDATA[<b>Glasses bought:</b>⮀ The world snaps into sharp focus as you put them on and you gawk a little as details that had slipped your eyes previously stood out in sharp contrast. You're a little gobsmacked at how much of a difference they make.]]></story_1>
-            <!-- Stories for Found Glasses won't show up because the action is always disabled, so we put its story here instead -->
-            <story_2><![CDATA[<b>Glasses found:</b>⮀ You still can't believe that merchant sold you a pair of glasses without commenting on the pair on your head. How inconsiderate.]]></story_2>
         </buy_glasses>
-        <found_glasses>
-            <label>Found Glasses</label>
-            <tooltip><![CDATA[
-            You could have sworn you had a spare pair of glasses somewhere. Now you've explored to the ends of the world. Every nook or cranny has revealed to you their secrets. And you've found them - in the last place anyone would ever think to look. On top of your head.<br>
-            You now start all loops with glasses.]]>
-            </tooltip>
-        </found_glasses>
         <buy_mana_z1>
             <label>Buy Mana</label>
             <tooltip><![CDATA[

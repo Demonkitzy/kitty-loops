@@ -11,32 +11,32 @@ let timeCounter = 0;
 let effectiveTime = 0;
 let lastSave = Date.now();
 
-function getSpeedMult(zone = curTown) {
+function getSpeedMult(zone, player) {
     let speedMult = 1;
 
     // dark ritual
-    if (zone === 0) speedMult *= getRitualBonus(0, 20, 10);
-    else if (zone === 1) speedMult *= getRitualBonus(20, 40, 5);
-    else if (zone === 2) speedMult *= getRitualBonus(40, 60, 2.5);
-    else if (zone === 3) speedMult *= getRitualBonus(60, 80, 1.5);
-    else if (zone === 4) speedMult *= getRitualBonus(80, 100, 1);
-    else if (zone === 5) speedMult *= getRitualBonus(100, 150, .5);
-    else if (zone === 6) speedMult *= getRitualBonus(150, 200, .5);
-    else if (zone === 7) speedMult *= getRitualBonus(200, 250, .5);
-    else if (zone === 8) speedMult *= getRitualBonus(250, 300, .5);
-    speedMult *= getRitualBonus(300, 666, .1);
+    if (zone === 0) speedMult *= getRitualBonus(0, 20, 10, player);
+    else if (zone === 1) speedMult *= getRitualBonus(20, 40, 5, player);
+    else if (zone === 2) speedMult *= getRitualBonus(40, 60, 2.5, player);
+    else if (zone === 3) speedMult *= getRitualBonus(60, 80, 1.5, player);
+    else if (zone === 4) speedMult *= getRitualBonus(80, 100, 1, player);
+    else if (zone === 5) speedMult *= getRitualBonus(100, 150, .5, player);
+    else if (zone === 6) speedMult *= getRitualBonus(150, 200, .5, player);
+    else if (zone === 7) speedMult *= getRitualBonus(200, 250, .5, player);
+    else if (zone === 8) speedMult *= getRitualBonus(250, 300, .5, player);
+    speedMult *= getRitualBonus(300, 666, .1, player);
     
     // chronomancy
-    speedMult *= getSkillBonus("Chronomancy");
+    speedMult *= getSkillBonus("Chronomancy", player);
     
     //Imbue Soul
-    speedMult += 0.5 * getBuffLevel("Imbuement3");
+    speedMult += 0.5 * getBuffLevel("Imbuement3", player);
 
     return speedMult;
 }
 
-function getActualGameSpeed() {
-    return gameSpeed * getSpeedMult() * bonusSpeed;
+function getActualGameSpeed(zone, player) {
+    return gameSpeed * getSpeedMult(zone, player) * bonusSpeed;
 }
 
 function tick() {
@@ -70,22 +70,22 @@ function tick() {
             return;
         }
         timer++;
-        timeCounter += 1 / baseManaPerSecond / getActualGameSpeed();
-        effectiveTime += 1 / baseManaPerSecond / getSpeedMult();
+        timeCounter += 1 / baseManaPerSecond / getActualGameSpeed(player.curTown, player);
+        effectiveTime += 1 / baseManaPerSecond / getSpeedMult(player.curTown, player);
 
-        actions.tick();
-        for (const dungeon of dungeons) {
+        actions.tick(player);
+        for (const dungeon of player.dungeons) {
             for (const level of dungeon) {
                 const chance = level.ssChance;
                 if (chance < 1) level.ssChance = Math.min(chance + 0.0000001, 1);
             }
         }
 
-        if (shouldRestart || timer >= timeNeeded) {
+        if (shouldRestart || timer >= player.timeNeeded) {
             loopEnd();
             prepareRestart();
         }
-        gameTicksLeft -= ((1000 / baseManaPerSecond) / getActualGameSpeed());
+        gameTicksLeft -= ((1000 / baseManaPerSecond) / getActualGameSpeed(player.curTown, player));
     }
 
     if (bonusSpeed > 1) {
@@ -131,7 +131,7 @@ function pauseGame(ping) {
     view.update();
     document.title = stop ? "*PAUSED* Idle Loops" : "Idle Loops";
     document.getElementById("pausePlay").textContent = _txt(`time_controls>${stop ? "play_button" : "pause_button"}`);
-    if (!stop && (shouldRestart || timer >= timeNeeded)) {
+    if (!stop && (shouldRestart || timer >= player.timeNeeded)) {
         restart();
     } else if (ping) {
         beep(250);
@@ -148,8 +148,8 @@ function loopEnd() {
         const loopCompletedActions = actions.current.slice(0, actions.currentPos);
         if (actions.current[actions.currentPos] !== undefined && actions.current[actions.currentPos].loopsLeft < actions.current[actions.currentPos].loops)
             loopCompletedActions.push(actions.current[actions.currentPos]);
-        markActionsComplete(loopCompletedActions);
-        actionStory(loopCompletedActions);
+        actions.markActionsComplete(loopCompletedActions, player);
+        actions.actionStory(loopCompletedActions, player);
         if (options.highlightNew) {
             view.requestUpdate("removeAllHighlights", null);
             view.requestUpdate("highlightIncompleteActions", null);
@@ -158,7 +158,7 @@ function loopEnd() {
 }
 
 function prepareRestart() {
-    const curAction = actions.getNextValidAction();
+    const curAction = actions.getNextValidAction(player);
     if (options.pauseBeforeRestart ||
         (options.pauseOnFailedLoop &&
          (actions.current.filter(action => action.loopsLeft - action.extraLoops > 0).length > 0))) {
@@ -167,7 +167,7 @@ function prepareRestart() {
             setTimeout(() => beep(250), 500);
         }
         if (curAction) {
-            actions.completedTicks += actions.getNextValidAction().ticks;
+            actions.completedTicks += actions.getNextValidAction(player).ticks;
             view.requestUpdate("updateTotalTicks", null);
         }
         for (let i = 0; i < actions.current.length; i++) {
@@ -184,15 +184,15 @@ function restart() {
     timer = 0;
     timeCounter = 0;
     effectiveTime = 0;
-    timeNeeded = timeNeededInitial;
+    player.timeNeeded = timeNeededInitial;
     document.title = "Idle Loops";
-    resetResources();
-    restartStats();
-    for (let i = 0; i < towns.length; i++) {
-        towns[i].restart();
+    resetResources(player);
+    restartStats(player);
+    for (let i = 0; i < player.towns.length; i++) {
+        player.towns[i].restart(player);
     }
     view.requestUpdate("updateSkills");
-    actions.restart();
+    actions.restart(player);
     view.requestUpdate("updateCurrentActionsDivs");
 }
 
@@ -205,13 +205,13 @@ function manualRestart() {
 
 function addActionToList(name, townNum, isTravelAction, insertAtIndex) {
     actions.nextLast = copyObject(actions.next);
-    for (const action of towns[townNum].totalActionList) {
+    for (const action of player.towns[townNum].totalActionList) {
         if (action.name === name) {
-            if (action.visible() && action.unlocked() && (!action.allowed || getNumOnList(action.name) < action.allowed())) {
+            if (action.visible() && action.unlocked() && (!action.allowed || actions.getNumOnList(action.name) < action.allowed(player))) {
                 let addAmount = actions.addAmount;
                 if (action.allowed) {
-                    const numMax = action.allowed();
-                    const numHave = getNumOnList(action.name);
+                    const numMax = action.allowed(player);
+                    const numHave = actions.getNumOnList(action.name);
                     if (numMax - numHave < addAmount) {
                         addAmount = numMax - numHave;
                     }
@@ -236,26 +236,27 @@ function addActionToList(name, townNum, isTravelAction, insertAtIndex) {
 
 // mana and resources
 
-function addMana(amount) {
-    timeNeeded += amount;
+function addMana(amount, player) {
+    player.timeNeeded += amount;
 }
 
-function addResource(resource, amount) {
-    if (Number.isFinite(amount)) resources[resource] += amount;
-    else resources[resource] = amount;
-    view.requestUpdate("updateResource", resource);
-
-    if (resource === "teamMembers" || resource === "armor" || resource === "zombie") view.requestUpdate("updateTeamCombat",null);
+function addResource(resource, amount, state) {
+    if (Number.isFinite(amount)) state.resources[resource] += amount;
+    else state.resources[resource] = amount;
+    if (state === player) {
+        view.requestUpdate("updateResource", resource);
+        if (resource === "teamMembers" || resource === "armor" || resource === "zombie") view.requestUpdate("updateTeamCombat",null);
+    }
 }
 
-function resetResource(resource) {
-    resources[resource] = resourcesTemplate[resource];
-    view.requestUpdate("updateResource", resource);
+function resetResource(resource, state) {
+    state.resources[resource] = resourcesTemplate[resource];
+    if (state === player) view.requestUpdate("updateResource", resource);
 }
 
-function resetResources() {
-    resources = copyObject(resourcesTemplate);
-    view.requestUpdate("updateResources", null);
+function resetResources(state) {
+    state.resources = copyObject(resourcesTemplate);
+    if (state === player) view.requestUpdate("updateResources", null);
 }
 
 function changeActionAmount(amount, num) {
@@ -347,26 +348,26 @@ function clearList() {
     view.updateNextActions();
 }
 
-function unlockTown(townNum) {
-    if (!towns[townNum].unlocked()) {
-        townsUnlocked.push(townNum);
-        townsUnlocked.sort();
+function unlockTown(townNum, state) {
+    if (!state.towns[townNum].unlocked(state)) {
+        state.townsUnlocked.push(townNum);
+        state.townsUnlocked.sort();
         // refresh current
-        view.showTown(townNum);
+        if (state === player) view.showTown(townNum);
     }
     let cNum = challengeSave.challengeMode;
     if (cNum !== 0) {
         if(challengeSave["c"+cNum]<townNum) challengeSave["c"+cNum] = townNum;
         else if(challengeSave["c"+cNum] === undefined) challengeSave["c"+cNum] = townNum;
     }
-    curTown = townNum;
+    state.curTown = townNum;
 }
 
-function adjustAll() {
-    adjustPots();
-    adjustLocks();
-    adjustSQuests();
-    adjustLQuests();
+function adjustAll(player) {
+    adjustPots(player);
+    adjustLocks(player);
+    adjustSQuests(player);
+    adjustLQuests(player);
     /*adjustWildMana();
     adjustHerbs();
     adjustHunt();
@@ -387,10 +388,11 @@ function capAmount(index, townNum) {
     const action = actions.next[index];
     const varName = `good${translateClassNames(action.name).varName}`;
     let alreadyExisting;
-    alreadyExisting = getNumOnList(action.name) + (action.disabled ? action.loops : 0);
+    alreadyExisting = actions.getNumOnList(action.name) + (action.disabled ? action.loops : 0);
     let newLoops;
     if (action.name === "Gather Team") newLoops = 5 + Math.floor(getSkillLevel("Leadership") / 100) - alreadyExisting;
-    else newLoops = towns[townNum][varName] - alreadyExisting;
+    else if (action.name === "Haggle") newLoops = 15 - alreadyExisting;
+    else newLoops = player.towns[townNum][varName] - alreadyExisting;
     actions.nextLast = copyObject(actions.next);
     if (action.loops + newLoops < 0) action.loops = 0;
     else action.loops += newLoops;
@@ -400,8 +402,8 @@ function capAmount(index, townNum) {
 
 function capTraining(index) {
     const action = actions.next[index];
-    const alreadyExisting = getNumOnList(action.name) + (action.disabled ? action.loops : 0);
-    const newLoops = trainingLimits - alreadyExisting;
+    const alreadyExisting = actions.getNumOnList(action.name) + (action.disabled ? action.loops : 0);
+    const newLoops = player.trainingLimits - alreadyExisting;
     actions.nextLast = copyObject(actions.next);
     if (action.loops + newLoops < 0) action.loops = 0;
     else action.loops += newLoops;
@@ -426,8 +428,8 @@ function addLoop(index) {
     const theClass = translateClassNames(action.name);
     let addAmount = actions.addAmount;
     if (theClass.allowed) {
-        const numMax = theClass.allowed();
-        const numHave = getNumOnList(theClass.name) + (action.disabled ? action.loops : 0);
+        const numMax = theClass.allowed(player);
+        const numHave = actions.getNumOnList(theClass.name) + (action.disabled ? action.loops : 0);
         if ((numMax - numHave) < addAmount) {
             addAmount = numMax - numHave;
         }
@@ -468,12 +470,11 @@ function collapse(index) {
 }
 
 function showNotification(name) {
-    console.log(document.getElementById(`${name}Notification`))
     document.getElementById(`${name}Notification`).style.display = "block";
 }
 
 function hideNotification(name) {
-    unreadActionStories = unreadActionStories.filter(toRead => toRead !== name);
+    player.unreadActionStories = player.unreadActionStories.filter(toRead => toRead !== name);
     document.getElementById(`${name}Notification`).style.display = "none";
 }
 
@@ -582,7 +583,7 @@ function disableAction(index) {
     }
     const translated = translateClassNames(action.name);
     if (action.disabled) {
-        if (!translated.allowed || getNumOnList(action.name) + action.loops <= translated.allowed()) action.disabled = false;
+        if (!translated.allowed || actions.getNumOnList(action.name) + action.loops <= translated.allowed(player)) action.disabled = false;
     } else {
         action.disabled = true;
     }
@@ -602,19 +603,19 @@ function removeAction(index) {
 
 function addOffline(num) {
     if (num) {
-        if (totalOfflineMs + num < 0 && bonusSpeed > 1) {
+        if (player.totalOfflineMs + num < 0 && bonusSpeed > 1) {
             toggleOffline();
         }
-        totalOfflineMs += num;
-        if (totalOfflineMs < 0) {
-            totalOfflineMs = 0;
+        player.totalOfflineMs += num;
+        if (player.totalOfflineMs < 0) {
+            player.totalOfflineMs = 0;
         }
         view.requestUpdate("updateOffline", null);
     }
 }
 
 function toggleOffline() {
-    if (totalOfflineMs === 0) return;
+    if (player.totalOfflineMs === 0) return;
     if (bonusSpeed === 1) {
         bonusSpeed = 5;
         document.getElementById("isBonusOn").textContent = _txt("time_controls>bonus_seconds>state>on");
