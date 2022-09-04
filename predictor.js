@@ -16,6 +16,7 @@ class Predictor {
         this.currPos = 0;
         this.negTimer = 0;
         this.hitNegMana = false;
+        this.ssCount = 0;
         this.restart();
     }
 
@@ -30,10 +31,13 @@ class Predictor {
                 if (this.hitNegMana && (options.repeatLastAction && this.currPos >= this.actionList.current.length-1)) this.finished = true;
             }
             if (results['shouldRestart']) this.finished = true
-            if (this.timer >= this.state.timeNeeded) {
+            if (!this.ssCount && this.timer >= this.state.timeNeeded) {
                 this.hitNegMana = true;
+                this.actionResults[this.currPos].resources = results.resources;
+                this.ssCount = this.state.ssCount;
             }
         }
+        if (!this.hitNegMana) this.ssCount = this.state.ssCount;
 
     }
 
@@ -57,6 +61,7 @@ class Predictor {
         this.currPos = 0;
         this.negTimer = 0;
         this.hitNegMana = false;
+        this.ssCount = 0;
         resetResources(this.state);
         restartStats(this.state);
         for (let i = 0; i < player.towns.length; i++) {
