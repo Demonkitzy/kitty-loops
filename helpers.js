@@ -66,6 +66,15 @@ function copyObject(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+function deepCopyObject(obj) {
+    return Object.assign(
+        Object.create(
+            Object.getPrototypeOf(obj)
+        ),
+        copyObject(obj)
+    );
+}
+
 function withinDistance(x1, y1, x2, y2, radius) {
     return getDistance(x1, y1, x2, y2) < radius;
 }

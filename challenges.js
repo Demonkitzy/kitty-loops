@@ -31,7 +31,7 @@ function loadChallenge() {
                 timer = 0;
                 timeCounter = 0;
                 effectiveTime = 0;
-                player.timeNeeded = 4320000 - totals.effectiveTime*50;
+                timeNeeded = 4320000 - totals.effectiveTime*50;
                 document.title = "Idle Loops";
                 resetResources();
                 restartStats();

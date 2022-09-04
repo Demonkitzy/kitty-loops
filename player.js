@@ -1,11 +1,3 @@
-/* What is needed:
-stats + talents
-towns
-skills
-buffs
-resources
-*/
-
 class Player {
     create(stats, buffs, towns, skills, totalTalent, trainingLimits, townsUnlocked, completedActions,
         dungeons, goldInvested, storyMax, unreadActionStories, totalOfflineMs, storyReqs) {
@@ -35,6 +27,16 @@ class Player {
         this.timeNeeded = timeNeededInitial;
         this.escapeStarted = false;
         this.portalUsed = false;
+        this.visual = true;
     }
-    
+
+    deepCopy() {
+        let copy = deepCopyObject(this);
+        let copyTowns = [];
+        for (const town of this.towns) {
+            copyTowns.push(town.deepCopy());
+        }
+        copy.towns = copyTowns;
+        return copy;
+    }
 }

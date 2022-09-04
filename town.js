@@ -33,18 +33,18 @@ class Town {
         return Math.floor((Math.sqrt(8 * this[`exp${varName}`] / 100 + 1) - 1) / 2);
     };
 
-    restart(state) {
+    restart(player) {
         for (let i = 0; i < this.varNames.length; i++) {
             const varName = this.varNames[i];
             this[`goodTemp${varName}`] = this[`good${varName}`];
             this[`lootFrom${varName}`] = 0;
-            if (state === player) view.requestUpdate("updateRegular",{name: varName, index: this.index});
+            if (player.visual) view.requestUpdate("updateRegular",{name: varName, index: this.index});
         }
     };
 
-    finishProgress(varName, expGain, state) {
+    finishProgress(varName, expGain, player) {
         // return if capped, for performance
-        if (this[`exp${varName}`] === 505000 && (state === player) ) {
+        if (this[`exp${varName}`] === 505000 && (player.visual) ) {
             if (options.pauseOnComplete) pauseGame();
             else return;
         }
@@ -56,16 +56,16 @@ class Town {
             this[`exp${varName}`] += expGain;
         }
         const level = this.getLevel(varName);
-        if (level !== prevLevel && (state === player) ) {
+        if (level !== prevLevel && (player.visual) ) {
             view.requestUpdate("updateLockedHidden", null);
-            adjustAll(state);
+            adjustAll(player);
             for (const action of totalActionList) {
-                if (state.towns[action.townNum].varNames.indexOf(action.varName) !== -1) {
+                if (player.towns[action.townNum].varNames.indexOf(action.varName) !== -1) {
                     view.requestUpdate("updateRegular", {name: action.varName, index: action.townNum});
                 }
             }
         }
-        if (state === player) view.requestUpdate("updateProgressAction", {name: varName, town: player.towns[player.curTown]});
+        if (player.visual) view.requestUpdate("updateProgressAction", {name: varName, town: player.towns[player.curTown]});
     };
 
     getPrcToNext(varName) {
@@ -77,7 +77,7 @@ class Town {
     };
 
     // finishes actions that have checkable aspects
-    finishRegular(varName, rewardRatio, rewardFunc, state) {
+    finishRegular(varName, rewardRatio, rewardFunc, player) {
         // error state, negative numbers.
         if (this[`total${varName}`] - this[`checked${varName}`] < 0) {
             this[`checked${varName}`] = this[`total${varName}`];
@@ -100,7 +100,7 @@ class Town {
             this[`goodTemp${varName}`]--;
             this[`lootFrom${varName}`] += rewardFunc();
         }
-        if (state === player) view.requestUpdate("updateRegular", {name: varName, index: this.index});
+        if (player.visual) view.requestUpdate("updateRegular", {name: varName, index: this.index});
     };
 
     createVars(varName) {
@@ -132,4 +132,10 @@ class Town {
             this.progressVars.push(varName);
         }
     };
+
+    deepCopy() {
+        let copy = deepCopyObject(this);
+        copy.totalActionList = this.totalActionList;
+        return copy;
+    }
 }

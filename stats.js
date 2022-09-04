@@ -147,10 +147,10 @@ function getPrcToNextSkillLevel(skill, player) {
     return Math.floor(curLevelProgress / nextLevelNeeds * 100 * 10) / 10;
 }
 
-function addSkillExp(name, amount, state) {
-    if (name === "Combat" || name === "Pyromancy" || name === "Restoration") amount *= 1 + getBuffLevel("Heroism", state) * 0.02;
-    state.skills[name].exp += amount;
-    if (state === player) view.requestUpdate("updateSkill", name);
+function addSkillExp(name, amount, player) {
+    if (name === "Combat" || name === "Pyromancy" || name === "Restoration") amount *= 1 + getBuffLevel("Heroism", player) * 0.02;
+    player.skills[name].exp += amount;
+    if (player.visual) view.requestUpdate("updateSkill", name);
 }
 
 function handleSkillExp(list, player) {
@@ -160,26 +160,26 @@ function handleSkillExp(list, player) {
     }
 }
 
-function addBuffAmt(name, amount, state) {
-    if (getBuffLevel(name, state) === buffHardCaps[name]) return;
-    state.buffs[name].amt += amount;
-    if (state === player) view.requestUpdate("updateBuff",name);
+function addBuffAmt(name, amount, player) {
+    if (getBuffLevel(name, player) === buffHardCaps[name]) return;
+    player.buffs[name].amt += amount;
+    if (player.visual) view.requestUpdate("updateBuff",name);
 }
 
-function addExp(name, amount, state) {
-    state.stats[name].exp += amount;
-    const aspirantBonus = getBuffLevel("Aspirant", state) ?  getBuffLevel("Aspirant", state) * 0.01 : 0;
-    let talentGain = (amount * getSkillBonus("Wunderkind", state) + amount * aspirantBonus) / 100;
-    state.stats[name].talent += talentGain;
-    state.totalTalent += talentGain;
-    if (state === player) view.requestUpdate("updateStat", name);
+function addExp(name, amount, player) {
+    player.stats[name].exp += amount;
+    const aspirantBonus = getBuffLevel("Aspirant", player) ?  getBuffLevel("Aspirant", player) * 0.01 : 0;
+    let talentGain = (amount * getSkillBonus("Wunderkind", player) + amount * aspirantBonus) / 100;
+    player.stats[name].talent += talentGain;
+    player.totalTalent += talentGain;
+    if (player.visual) view.requestUpdate("updateStat", name);
 }
 
-function restartStats(state) {
+function restartStats(player) {
     for (let i = 0; i < statList.length; i++) {
-        if(getSkillLevel("Wunderkind", state) > 0) state.stats[statList[i]].exp = getExpOfLevel(getBuffLevel("Imbuement2", state) * 2);
-        else state.stats[statList[i]].exp = getExpOfLevel(getBuffLevel("Imbuement2", state));
-        if (state === player) view.requestUpdate("updateStat", statList[i]);
+        if(getSkillLevel("Wunderkind", player) > 0) player.stats[statList[i]].exp = getExpOfLevel(getBuffLevel("Imbuement2", player) * 2);
+        else player.stats[statList[i]].exp = getExpOfLevel(getBuffLevel("Imbuement2", player));
+        if (player.visual) view.requestUpdate("updateStat", statList[i]);
     }
 }
 

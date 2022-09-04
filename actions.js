@@ -14,65 +14,66 @@ class Actions {
         this.timeSinceLastUpdate = 0;
     }
 
-    tick(state) {
+    tick(player, timer) {
         const curAction = this.getNextValidAction(player);
+        let finishedAction = false;
         // out of actions
         if (!curAction) {
-            if (state === player) shouldRestart = true;
-            return;
+            if (player.visual) shouldRestart = true;
+            return {"finished": false, "shouldRestart": true, "resources": copyObject(player.resources)};
         }
-        this.addExpFromAction(curAction, state);
+        this.addExpFromAction(curAction, player);
         curAction.ticks++;
         curAction.manaUsed++;
-        curAction.timeSpent += 1 / baseManaPerSecond / getActualGameSpeed(state.curTown, state);
+        curAction.timeSpent += 1 / baseManaPerSecond / getActualGameSpeed(player.curTown, player);
         // only for multi-part progress bars
         if (curAction.loopStats) {
             let segment = 0;
-            let curProgress = state.towns[curAction.townNum][curAction.varName];
-            while (curProgress >= curAction.loopCost(segment, state)) {
-                curProgress -= curAction.loopCost(segment, state);
+            let curProgress = player.towns[curAction.townNum][curAction.varName];
+            while (curProgress >= curAction.loopCost(segment, player)) {
+                curProgress -= curAction.loopCost(segment, player);
                 segment++;
             }
             // segment is 0,1,2
-            const toAdd = curAction.tickProgress(segment, state) * (curAction.manaCost(state) / curAction.adjustedTicks);
+            const toAdd = curAction.tickProgress(segment, player) * (curAction.manaCost(player) / curAction.adjustedTicks);
             // console.log("using: "+curAction.loopStats[(towns[curAction.townNum][curAction.varName + "LoopCounter"]+segment) % curAction.loopStats.length]+" to add: " + toAdd + " to segment: " + segment + " and part " +towns[curAction.townNum][curAction.varName + "LoopCounter"]+" of progress " + curProgress + " which costs: " + curAction.loopCost(segment));
-            state.towns[curAction.townNum][curAction.varName] += toAdd;
+            player.towns[curAction.townNum][curAction.varName] += toAdd;
             curProgress += toAdd;
             let partUpdateRequired = false;
-            while (curProgress >= curAction.loopCost(segment, state)) {
-                curProgress -= curAction.loopCost(segment, state);
+            while (curProgress >= curAction.loopCost(segment, player)) {
+                curProgress -= curAction.loopCost(segment, player);
                 // segment finished
                 if (segment === curAction.segments - 1) {
                     // part finished
-                    if (curAction.name === "Dark Ritual" && state.towns[curAction.townNum][curAction.varName] >= 4000000) unlockStory("darkRitualThirdSegmentReached", state);
-                    if (curAction.name === "Imbue Mind" && state.towns[curAction.townNum][curAction.varName] >= 700000000) unlockStory("imbueMindThirdSegmentReached", state);
-                    state.towns[curAction.townNum][curAction.varName] = 0;
-                    state.towns[curAction.townNum][`${curAction.varName}LoopCounter`] += curAction.segments;
-                    state.towns[curAction.townNum][`total${curAction.varName}`]++;
+                    if (curAction.name === "Dark Ritual" && player.towns[curAction.townNum][curAction.varName] >= 4000000) unlockStory("darkRitualThirdSegmentReached", player);
+                    if (curAction.name === "Imbue Mind" && player.towns[curAction.townNum][curAction.varName] >= 700000000) unlockStory("imbueMindThirdSegmentReached", player);
+                    player.towns[curAction.townNum][curAction.varName] = 0;
+                    player.towns[curAction.townNum][`${curAction.varName}LoopCounter`] += curAction.segments;
+                    player.towns[curAction.townNum][`total${curAction.varName}`]++;
                     segment -= curAction.segments;
-                    curAction.loopsFinished(state);
+                    curAction.loopsFinished(player);
                     partUpdateRequired = true;
-                    if (curAction.canStart && !curAction.canStart(state)) {
+                    if (curAction.canStart && !curAction.canStart(player)) {
                         this.completedTicks += curAction.ticks;
-                        if (state === player) view.requestUpdate("updateTotalTicks", null);
+                        if (player.visual) view.requestUpdate("updateTotalTicks", null);
                         curAction.loopsLeft = 0;
                         curAction.ticks = 0;
-                        curAction.manaRemaining = state.timeNeeded - timer;
-                        curAction.goldRemaining = state.resources.gold;
-                        curAction.finish(state);
+                        curAction.manaRemaining = player.timeNeeded - timer;
+                        curAction.goldRemaining = player.resources.gold;
+                        curAction.finish(player);
                         totals.actions++;
                         break;
                     }
-                    state.towns[curAction.townNum][curAction.varName] = curProgress;
+                    player.towns[curAction.townNum][curAction.varName] = curProgress;
                 }
                 if (curAction.segmentFinished) {
-                    curAction.segmentFinished(state);
+                    curAction.segmentFinished(player);
                     partUpdateRequired = true;
                 }
                 segment++;
             }
-            if (state === player) view.requestUpdate("updateMultiPartSegments", curAction);
-            if (partUpdateRequired && state === player) {
+            if (player.visual) view.requestUpdate("updateMultiPartSegments", curAction);
+            if (partUpdateRequired && player.visual) {
                 view.requestUpdate("updateMultiPart", curAction);
             }
         }
@@ -82,22 +83,23 @@ class Actions {
 
             curAction.lastMana = curAction.rawTicks;
             this.completedTicks += curAction.adjustedTicks;
-            curAction.finish(state);
-            if (state === player) totals.actions++;
-            curAction.manaRemaining = state.timeNeeded - timer;
+            curAction.finish(player);
+            if (player.visual) totals.actions++;
+            curAction.manaRemaining = player.timeNeeded - timer;
             
             if (curAction.cost) {
-                curAction.cost(state);
+                curAction.cost(player);
             }
-            curAction.goldRemaining = state.resources.gold;
+            curAction.goldRemaining = player.resources.gold;
 
-            this.adjustTicksNeeded(state);
-            if (state === player) view.requestUpdate("updateCurrentActionLoops", this.currentPos);
+            this.adjustTicksNeeded(player);
+            finishedAction = true;
+            if (player.visual) view.requestUpdate("updateCurrentActionLoops", this.currentPos);
         }
-        if (state === player) view.requestUpdate("updateCurrentActionBar", this.currentPos);
+        if (player.visual) view.requestUpdate("updateCurrentActionBar", this.currentPos);
         if (curAction.loopsLeft === 0) {
             if (!this.current[this.currentPos + 1] && options.repeatLastAction &&
-                (!curAction.canStart || curAction.canStart(state)) && curAction.townNum === state.curTown) {
+                (!curAction.canStart || curAction.canStart(player)) && curAction.townNum === player.curTown) {
                 curAction.loopsLeft++;
                 curAction.loops++;
                 curAction.extraLoops++;
@@ -105,22 +107,25 @@ class Actions {
                 this.currentPos++;
             }
         }
+        
+        return {"finished": finishedAction, "resources": copyObject(player.resources), "mana": (player.timeNeeded - timer), "shouldRestart": false}
+        
     };
 
-    getNextValidAction(state) {
+    getNextValidAction(player) {
         let curAction = this.current[this.currentPos];
         if (!curAction) {
             return curAction;
         }
-        if (curAction.allowed && this.getNumOnCurList(curAction.name) > curAction.allowed(state)) {
+        if (curAction.allowed && this.getNumOnCurList(curAction.name) > curAction.allowed(player)) {
             curAction.ticks = 0;
             curAction.timeSpent = 0;
-            if (state === player) view.requestUpdate("updateCurrentActionBar", this.currentPos);
+            if (player.visual) view.requestUpdate("updateCurrentActionBar", this.currentPos);
             return undefined;
         }
-        while ((curAction.canStart && !curAction.canStart(state) && curAction.townNum === state.curTown) || curAction.townNum !== state.curTown) {
-            curAction.errorMessage = this.getErrorMessage(curAction, state);
-            if (state === player) view.requestUpdate("updateCurrentActionBar", this.currentPos);
+        while ((curAction.canStart && !curAction.canStart(player) && curAction.townNum === player.curTown) || curAction.townNum !== player.curTown) {
+            curAction.errorMessage = this.getErrorMessage(curAction, player);
+            if (player.visual) view.requestUpdate("updateCurrentActionBar", this.currentPos);
             this.currentPos++;
             if (this.currentPos >= this.current.length) {
                 curAction = undefined;
@@ -131,29 +136,29 @@ class Actions {
         return curAction;
     };
 
-    getErrorMessage(action, state) {
-        if (action.townNum !== state.curTown) {
-            return `You were in zone ${curTown + 1} when you tried this action, and needed to be in zone ${action.townNum + 1}`;
+    getErrorMessage(action, player) {
+        if (action.townNum !== player.curTown) {
+            return `You were in zone ${player.curTown + 1} when you tried this action, and needed to be in zone ${action.townNum + 1}`;
         }
-        if (action.canStart && !action.canStart(state)) {
+        if (action.canStart && !action.canStart(player)) {
             return "You could not make the cost for this action.";
         }
         return "??";
     };
 
-    restart(state) {
+    restart(player) {
         this.currentPos = 0;
         this.completedTicks = 0;
-        state.curTown = 0;
-        state.towns[0].suppliesCost = 300;
-        if (state === player) view.requestUpdate("updateResource","supplies");
-        state.curAdvGuildSegment = 0;
-        state.curCraftGuildSegment = 0;
-		state.curWizCollegeSegment = 0;
-        state.curFightFrostGiantsSegment = 0;
-        state.curFightJungleMonstersSegment = 0;
-        state.curThievesGuildSegment = 0;
-        for (const town of state.towns) {
+        player.curTown = 0;
+        player.towns[0].suppliesCost = 300;
+        if (player.visual) view.requestUpdate("updateResource","supplies");
+        player.curAdvGuildSegment = 0;
+        player.curCraftGuildSegment = 0;
+		player.curWizCollegeSegment = 0;
+        player.curFightFrostGiantsSegment = 0;
+        player.curFightJungleMonstersSegment = 0;
+        player.curThievesGuildSegment = 0;
+        for (const town of player.towns) {
             for (const action of town.totalActionList) {
                 if (action.type === "multipart") {
                     town[action.varName] = 0;
@@ -161,11 +166,11 @@ class Actions {
                 }
             }
         }
-        state.guild = "";
-        state.escapeStarted = false;
-        state.portalUsed = false;
+        player.guild = "";
+        player.escapeStarted = false;
+        player.portalUsed = false;
         totalMerchantMana = 7500;
-        if (options.keepCurrentList && (state === player)) {
+        if (options.keepCurrentList && (player.visual)) {
 
             for (const action of this.current) {
                 action.loops -= action.extraLoops;
@@ -201,26 +206,26 @@ class Actions {
                 this.current.push(toAdd);
             }
         }
-        if ((this.current.length === 0) && (state === player)) {
+        if ((this.current.length === 0) && (player.visual)) {
             pauseGame();
         }
-        this.adjustTicksNeeded(state);
-        if (state === player) {
+        this.adjustTicksNeeded(player);
+        if (player.visual) {
             view.requestUpdate("updateMultiPartActions");
             view.requestUpdate("updateNextActions");
             view.requestUpdate("updateTime");
         }
     };
 
-    adjustTicksNeeded(state) {
+    adjustTicksNeeded(player) {
         let remainingTicks = 0;
         for (let i = this.currentPos; i < this.current.length; i++) {
             const action = this.current[i];
-            this.setAdjustedTicks(action, state);
+            this.setAdjustedTicks(action, player);
             remainingTicks += action.loopsLeft * action.adjustedTicks;
         }
         this.totalNeeded = this.completedTicks + remainingTicks;
-        if (state === player) view.requestUpdate("updateTotalTicks", null);
+        if (player.visual) view.requestUpdate("updateTotalTicks", null);
     };
 
 
@@ -244,39 +249,39 @@ class Actions {
         }
     };
 
-    setAdjustedTicks(action, state) {
+    setAdjustedTicks(action, player) {
         let newCost = 0;
         for (const actionStatName in action.stats){
-            newCost += action.stats[actionStatName] / (1 + getLevel(actionStatName, state) / 100);
+            newCost += action.stats[actionStatName] / (1 + getLevel(actionStatName, player) / 100);
         }
-        action.rawTicks = action.manaCost(state) * newCost - 0.000001;
+        action.rawTicks = action.manaCost(player) * newCost - 0.000001;
         action.adjustedTicks = Math.max(1, Math.ceil(action.rawTicks));
     };
 
-    addExpFromAction(action, state) {
-        const adjustedExp = action.expMult * (action.manaCost(state) / action.adjustedTicks);
+    addExpFromAction(action, player) {
+        const adjustedExp = action.expMult * (action.manaCost(player) / action.adjustedTicks);
         for (const stat in action.stats) {
-            const expToAdd = action.stats[stat] * adjustedExp * getTotalBonusXP(stat, state);
+            const expToAdd = action.stats[stat] * adjustedExp * getTotalBonusXP(stat, player);
             const statExp = `statExp${stat}`;
             if (!action[statExp]) {
                 action[statExp] = 0;
             }
             action[statExp] += expToAdd;
-            addExp(stat, expToAdd, state);
+            addExp(stat, expToAdd, player);
         }
     };
 
-    markActionsComplete(loopCompletedActions, state) {
+    markActionsComplete(loopCompletedActions, player) {
         loopCompletedActions.forEach(action => {
             let varName = Action[withoutSpaces(action.name)].varName;
-            if (!state.completedActions.includes(varName)) state.completedActions.push(varName);
+            if (!player.completedActions.includes(varName)) player.completedActions.push(varName);
         });
     };
     
-    actionStory(loopCompletedActions, state) {
+    actionStory(loopCompletedActions, player) {
         loopCompletedActions.forEach(action => {
             let completed = action.loops - action.loopsLeft;
-            if (action.story !== undefined) action.story(completed, state);
+            if (action.story !== undefined) action.story(completed, player);
         });
     };
 

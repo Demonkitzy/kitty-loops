@@ -73,7 +73,7 @@ function tick() {
         timeCounter += 1 / baseManaPerSecond / getActualGameSpeed(player.curTown, player);
         effectiveTime += 1 / baseManaPerSecond / getSpeedMult(player.curTown, player);
 
-        actions.tick(player);
+        actions.tick(player, timer);
         for (const dungeon of player.dungeons) {
             for (const level of dungeon) {
                 const chance = level.ssChance;
@@ -240,23 +240,23 @@ function addMana(amount, player) {
     player.timeNeeded += amount;
 }
 
-function addResource(resource, amount, state) {
-    if (Number.isFinite(amount)) state.resources[resource] += amount;
-    else state.resources[resource] = amount;
-    if (state === player) {
+function addResource(resource, amount, player) {
+    if (Number.isFinite(amount)) player.resources[resource] += amount;
+    else player.resources[resource] = amount;
+    if (player.visual) {
         view.requestUpdate("updateResource", resource);
         if (resource === "teamMembers" || resource === "armor" || resource === "zombie") view.requestUpdate("updateTeamCombat",null);
     }
 }
 
-function resetResource(resource, state) {
-    state.resources[resource] = resourcesTemplate[resource];
-    if (state === player) view.requestUpdate("updateResource", resource);
+function resetResource(resource, player) {
+    player.resources[resource] = resourcesTemplate[resource];
+    if (player.visual) view.requestUpdate("updateResource", resource);
 }
 
-function resetResources(state) {
-    state.resources = copyObject(resourcesTemplate);
-    if (state === player) view.requestUpdate("updateResources", null);
+function resetResources(player) {
+    player.resources = copyObject(resourcesTemplate);
+    if (player.visual) view.requestUpdate("updateResources", null);
 }
 
 function changeActionAmount(amount, num) {
@@ -348,19 +348,19 @@ function clearList() {
     view.updateNextActions();
 }
 
-function unlockTown(townNum, state) {
-    if (!state.towns[townNum].unlocked(state)) {
-        state.townsUnlocked.push(townNum);
-        state.townsUnlocked.sort();
+function unlockTown(townNum, player) {
+    if (!player.towns[townNum].unlocked(player)) {
+        player.townsUnlocked.push(townNum);
+        player.townsUnlocked.sort();
         // refresh current
-        if (state === player) view.showTown(townNum);
+        if (player.visual) view.showTown(townNum);
     }
     let cNum = challengeSave.challengeMode;
     if (cNum !== 0) {
         if(challengeSave["c"+cNum]<townNum) challengeSave["c"+cNum] = townNum;
         else if(challengeSave["c"+cNum] === undefined) challengeSave["c"+cNum] = townNum;
     }
-    state.curTown = townNum;
+    player.curTown = townNum;
 }
 
 function adjustAll(player) {

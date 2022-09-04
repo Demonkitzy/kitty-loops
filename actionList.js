@@ -974,23 +974,23 @@ Action.SmallDungeon = new DungeonAction("Small Dungeon", 0, {
         if (player.towns[this.townNum][this.varName + "LoopCounter"] >= 42) unlockStory("clearSDungeon",player);
     },
 });
-function finishDungeon(dungeonNum, floorNum, state) {
-    const floor = state.dungeons[dungeonNum][floorNum];
+function finishDungeon(dungeonNum, floorNum, player) {
+    const floor = player.dungeons[dungeonNum][floorNum];
     if (!floor) {
         return false;
     }
     floor.completed++;
     const rand = Math.random();
-    if (state === player && rand <= floor.ssChance) {
+    if (player.visual && rand <= floor.ssChance) {
         const statToAdd = statList[Math.floor(Math.random() * statList.length)];
         floor.lastStat = statToAdd;
-        state.stats[statToAdd].soulstone = state.stats[statToAdd].soulstone ? (state.stats[statToAdd].soulstone + Math.floor(Math.pow(10, dungeonNum) * getSkillBonus("Divine",state))) : 1;
+        player.stats[statToAdd].soulstone = player.stats[statToAdd].soulstone ? (player.stats[statToAdd].soulstone + Math.floor(Math.pow(10, dungeonNum) * getSkillBonus("Divine",player))) : 1;
         floor.ssChance *= 0.98;
         view.requestUpdate("updateSoulstones",null);
         return true;
     }
-    if (state !== player) {
-        state.ssCount += Math.floor(Math.pow(10, dungeonNum) * getSkillBonus("Divine", state))
+    if (!player.visual) {
+        player.ssCount += Math.floor(Math.pow(10, dungeonNum) * getSkillBonus("Divine", player))
     }
     return false;
 }
@@ -1075,12 +1075,12 @@ Action.Haggle = new Action("Haggle", {
     unlocked() {
         return (getSkillLevel("Combat",player) + getSkillLevel("Magic",player)) >= 35;
     },
-    finish(state) {
-        state.towns[0].suppliesCost -= 20;
-        if (state.towns[0].suppliesCost < 0) {
-            state.towns[0].suppliesCost = 0;
+    finish(player) {
+        player.towns[0].suppliesCost -= 20;
+        if (player.towns[0].suppliesCost < 0) {
+            player.towns[0].suppliesCost = 0;
         }
-        if (state === player) view.requestUpdate("updateResource", "supplies");
+        if (player.visual) view.requestUpdate("updateResource", "supplies");
     },
     story(completed, player) {
         if (completed >= 15) unlockStory("haggle15TimesInALoop",player);
